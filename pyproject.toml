@@ -1,68 +1,7 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=70.0,<80.0", "wheel>=0.45.0"]
 build-backend = "setuptools.build_meta"
 
-[project]
-name = "teloce-npm"
-version = "0.1.0"
-description = "Use npm packages in .vel files without Node.js or node_modules."
-readme = "README.md"
-license = { text = "MIT" }
-authors = [
-    { name = "Teloce Team", email = "team@teloce.dev" }
-]
-maintainers = [
-    { name = "Teloce Team", email = "team@teloce.dev" }
-]
-keywords = ["teloce", "npm", "javascript", "vel", "python", "browser"]
-classifiers = [
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Software Development :: Build Tools",
-    "Topic :: Software Development :: Code Generators",
-    "Topic :: Software Development :: Compilers",
-    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
-]
-requires-python = ">=3.9"
-dependencies = [
-    "requests>=2.28",
-    "semver>=3.0",
-    "tqdm>=4.65",
-    "tree-sitter>=0.21",
-    "tree-sitter-javascript>=0.21",
-    "tomli>=2.0; python_version < '3.11'",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "black>=23.0",
-    "ruff>=0.1",
-    "mypy>=1.0",
-]
-
-[project.scripts]
-teloce-npm = "teloce_npm.__main__:main"
-
-[project.urls]
-Homepage = "https://github.com/aldanedev-create/teloce-npm"
-Documentation = "https://teloce-npm.readthedocs.io"
-Repository = "https://github.com/aldanedev-create/teloce-npm"
-Issues = "https://github.com/aldanedev-create/teloce-npm/issues"
-Changelog = "https://github.com/aldanedev-create/teloce-npm/blob/main/CHANGELOG.md"
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.setuptools.package-data][build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
 
 [project]
 name = "teloce-npm"
@@ -86,26 +25,39 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+
     "Topic :: Software Development :: Build Tools",
     "Topic :: Software Development :: Code Generators",
     "Topic :: Software Development :: Compilers",
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
 requires-python = ">=3.9"
+
 dependencies = [
-    "requests>=2.28",
-    "semver>=3.0",
-    "tqdm>=4.65",
-    "tomli>=2.0; python_version < '3.11'",
+    "requests>=2.34.0,<3.0",
+    "semver>=3.0.4,<4.0",
+    "tqdm>=4.70.0,<5.0",
+    "tree-sitter>=0.26.0,<0.27.0",
+    "tree-sitter-javascript>=0.25.0,<0.26.0",
+    "tomli>=2.5.0,<3.0; python_version < '3.11'",
 ]
 
 [project.optional-dependencies]
+# Optional bundler for complex packages (Monaco, Cesium, pdf.js, etc.)
+# Install with: pip install teloce-npm[bundler]
+bundler = [
+    "minifyjs>=0.1.0",
+]
+
+# Development toolchain
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "black>=23.0",
-    "ruff>=0.1",
-    "mypy>=1.0",
+    "pytest>=9.0,<10.0",
+    "pytest-cov>=7.0,<8.0",
+    "black>=26.0,<27.0",
+    "ruff>=0.17.0,<0.18.0",
+    "mypy>=2.4.0,<3.0",
 ]
 
 [project.scripts]
@@ -118,49 +70,73 @@ Repository = "https://github.com/aldanedev-create/teloce-npm"
 Issues = "https://github.com/aldanedev-create/teloce-npm/issues"
 Changelog = "https://github.com/aldanedev-create/teloce-npm/blob/main/CHANGELOG.md"
 
+
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
 teloce_npm = ["generator/templates/*.tmpl"]
 
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
 addopts = "-ra --strict-markers"
 
+[tool.coverage.run]
+source = ["src/teloce_npm"]
+omit = [
+    "*/tests/*",
+    "*/__main__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+
 [tool.black]
 line-length = 100
-target-version = ["py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312", "py313"]
 
 [tool.ruff]
 line-length = 100
-select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
-ignore = ["E501"]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "W",   # pycodestyle warnings
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # function call in default argument (needed for typer/argparse)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]  # allow assert False in tests
 
 [tool.mypy]
 python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_equality = true
 ignore_missing_imports = true
-teloce_npm = ["generator/templates/*.tmpl"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = "test_*.py"
-addopts = "-ra --strict-markers"
-
-[tool.black]
-line-length = 100
-target-version = ["py39", "py310", "py311", "py312"]
-
-[tool.ruff]
-line-length = 100
-select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
-ignore = ["E501"]
-
-[tool.mypy]
-python_version = "3.9"
-warn_return_any = true
-warn_unused_configs = true
+[[tool.mypy.overrides]]
+module = ["tree_sitter", "tree_sitter_javascript", "minifyjs", "semver", "tqdm"]
 ignore_missing_imports = true
