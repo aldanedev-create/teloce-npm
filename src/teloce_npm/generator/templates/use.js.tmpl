@@ -12,29 +12,55 @@
 //     const _ = use('lodash')
 //     const Chart = use('chart.js')
 //
+// Type-check this file with:  tsc --allowJs --checkJs --noEmit use.js
+//
 (function() {
     "use strict";
 
-    // Package name -> version map. Used only for diagnostics.
+    /**
+     * `window` plus `use()` and the package globals it resolves.
+     * @typedef {Window & {
+     *   use?: (name: string) => any,
+     *   [packageGlobal: string]: any
+     * }} TeloceWindow
+     */
+
+    /** @type {TeloceWindow} */
+    var w = /** @type {TeloceWindow} */ (/** @type {unknown} */ (window));
+
+    /**
+     * Package name -> version map. Used only for diagnostics.
+     * @type {Object<string, string>}
+     */
     var available = {
 ${available_packages}
     };
 
-    window.use = function(name) {
+    /**
+     * Return a loaded npm package.
+     *
+     * Looks for window[name] first, then the window-safe name
+     * (e.g. "chart.js" -> "chart_js"). Logs a descriptive error and
+     * returns undefined if the package is missing or not loaded yet.
+     *
+     * @param {string} name npm package name, e.g. "lodash" or "chart.js".
+     * @returns {any} The package's exports, or undefined if unavailable.
+     */
+    w.use = function(name) {
         if (typeof name !== "string" || !name) {
             console.error("[Teloce-NPM] use() requires a package name string.");
             return undefined;
         }
 
         // 1. Try direct lookup (works for simple names like "lodash")
-        if (window[name] !== undefined) {
-            return window[name];
+        if (w[name] !== undefined) {
+            return w[name];
         }
 
         // 2. Try the window-safe name (e.g., "chart.js" -> "chart_js")
         var safeName = name.replace(/[@\/\-\.]/g, "_");
-        if (window[safeName] !== undefined) {
-            return window[safeName];
+        if (w[safeName] !== undefined) {
+            return w[safeName];
         }
 
         // 3. Report a helpful error

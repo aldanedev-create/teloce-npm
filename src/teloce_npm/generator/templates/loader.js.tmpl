@@ -6,35 +6,106 @@
 // Loads all wrapped npm packages listed in manifest.json in
 // dependency order, then dispatches the "teloce-npm-ready" event.
 //
-// Each wrapped package is a plain IIFE that attaches itself to
-// window.<package_name>. We use dynamic import() so the browser
-// executes them in the correct order and surfaces load errors.
+// Each wrapped package is either a plain IIFE that attaches itself to
+// window.<package_name>, or a bundled ES module whose exports this loader
+// attaches to window.<package_name>.
+//
+// Type-check this file with:  tsc --allowJs --checkJs --noEmit loader.js
 //
 (function() {
     "use strict";
 
+    /**
+     * Monaco's global configuration object.
+     * @typedef {Object} MonacoEnvironmentConfig
+     * @property {(moduleId: string, label: string) => string} [getWorkerUrl]
+     */
+
+    /**
+     * Worker label (e.g. "editor", "json", "typescript") -> worker file path,
+     * relative to the package base path.
+     * @typedef {Object<string, string>} WorkerMap
+     */
+
+    /**
+     * One entry of manifest.json -> packages.
+     * @typedef {Object} ManifestPackage
+     * @property {string} version Exact installed version.
+     * @property {string} file Wrapped/bundled file path, relative to the base path.
+     * @property {number} [size] File size in bytes.
+     * @property {string} [integrity] SHA-512 integrity hash from the registry.
+     * @property {Object<string, string>} [dependencies] Package name -> version range.
+     * @property {WorkerMap} [workers] Worker files shipped with the package.
+     */
+
+    /**
+     * The parsed contents of manifest.json.
+     * @typedef {Object} Manifest
+     * @property {Object<string, ManifestPackage>} [packages]
+     */
+
+    /**
+     * `window` plus the globals Teloce-NPM reads or writes.
+     * @typedef {Window & {
+     *   MonacoEnvironment?: MonacoEnvironmentConfig,
+     *   __teloceNpmWorkers?: Object<string, WorkerMap>,
+     *   [packageGlobal: string]: any
+     * }} TeloceWindow
+     */
+
+    /** @type {TeloceWindow} */
+    var w = /** @type {TeloceWindow} */ (/** @type {unknown} */ (window));
+
+    /** @type {string} URL of manifest.json. */
     var MANIFEST_URL = "${manifest_url}";
+
+    /** @type {string} URL prefix under which wrapped files are served. */
     var BASE_PATH = "${base_path}";
 
-    async function main() {
-        console.log("[Teloce-NPM] Loading packages...");
+    /**
+     * Convert a package name into the window-safe global name that
+     * `use()` looks up (e.g. "chart.js" -> "chart_js").
+     * @param {string} name npm package name.
+     * @returns {string} Window-safe name.
+     */
+    function toSafeName(name) {
+        return name.replace(/[@\/\-\.]/g, "_");
+    }
 
-        var manifest;
+    /**
+     * Fetch and parse manifest.json.
+     * @returns {Promise<Manifest | null>} The manifest, or null if it could not be loaded.
+     */
+    async function fetchManifest() {
         try {
             var response = await fetch(MANIFEST_URL, { cache: "no-cache" });
             if (!response.ok) {
                 throw new Error("HTTP " + response.status + " " + response.statusText);
             }
-            manifest = await response.json();
+            return /** @type {Manifest} */ (await response.json());
         } catch (error) {
             console.error(
                 "[Teloce-NPM] Could not load " + MANIFEST_URL + ". " +
                 "Have you run `teloce-npm install`?"
             );
             console.error(error);
+            return null;
+        }
+    }
+
+    /**
+     * Load every package in the manifest, then signal readiness.
+     * @returns {Promise<void>}
+     */
+    async function main() {
+        console.log("[Teloce-NPM] Loading packages...");
+
+        var manifest = await fetchManifest();
+        if (!manifest) {
             return;
         }
 
+        /** @type {Object<string, ManifestPackage>} */
         var packages = manifest.packages || {};
         var packageNames = Object.keys(packages);
 
@@ -46,9 +117,17 @@
 
         console.log("[Teloce-NPM] Found " + packageNames.length + " package(s).");
 
+        /** @type {Set<string>} Packages that finished loading. */
         var loaded = new Set();
+        /** @type {Set<string>} Packages currently loading (cycle detection). */
         var loading = new Set();
 
+        /**
+         * Load one package after its dependencies (depth-first).
+         * @param {string} name npm package name.
+         * @returns {Promise<void>}
+         * @throws {Error} On a circular dependency.
+         */
         async function loadPackage(name) {
             if (loaded.has(name)) return;
 
@@ -69,13 +148,14 @@
 
             loading.add(name);
 
+            /** @type {WorkerMap} */
             var workers = info.workers || {};
             if (Object.keys(workers).length > 0) {
-                window.__teloceNpmWorkers = window.__teloceNpmWorkers || {};
-                window.__teloceNpmWorkers[name] = workers;
+                w.__teloceNpmWorkers = w.__teloceNpmWorkers || {};
+                w.__teloceNpmWorkers[name] = workers;
                 if (name === "monaco-editor") {
-                    window.MonacoEnvironment = window.MonacoEnvironment || {};
-                    window.MonacoEnvironment.getWorkerUrl = function(moduleId, label) {
+                    w.MonacoEnvironment = w.MonacoEnvironment || {};
+                    w.MonacoEnvironment.getWorkerUrl = function(moduleId, label) {
                         var worker = workers[label] || workers.editor;
                         if (!worker) {
                             throw new Error("No worker asset registered for Monaco label: " + label);
@@ -96,7 +176,17 @@
             // Load this package
             var url = BASE_PATH + "/" + info.file;
             try {
-                await import(url);
+                /** @type {Object<string, any>} */
+                var mod = await import(url);
+                // Bundled (ESM) output has no side effects: expose its exports on
+                // window under the same safe name use() looks up. Wrapped IIFE
+                // packages already set their own global, so leave those alone.
+                var safeName = toSafeName(name);
+                if (w[safeName] === undefined && w[name] === undefined) {
+                    var keys = Object.keys(mod);
+                    w[safeName] =
+                        keys.length === 1 && keys[0] === "default" ? mod.default : mod;
+                }
                 loaded.add(name);
                 console.log(
                     "[Teloce-NPM] Loaded " + name + "@" + info.version
@@ -116,7 +206,7 @@
             try {
                 await loadPackage(packageNames[i]);
             } catch (error) {
-                console.error("[Teloce-NPM] " + error.message);
+                console.error("[Teloce-NPM] " + (error instanceof Error ? error.message : String(error)));
             }
         }
 
