@@ -1,6 +1,6 @@
 {
   "lockfile_version": "1.0.0",
-  "generated_at": "2026-11-02T02:58:57.447898+00:00",
+  "generated_at": "2026-11-02T03:28:14.928434+00:00",
   "packages": {
     "monaco-editor": {
       "version": "0.57.0",
@@ -11,7 +11,7 @@
         "dompurify": "3.4.15"
       },
       "wrapped": "monaco_editor/monaco_editor.js",
-      "size": 6191790,
+      "size": 6191304,
       "workers": {
         "css": "monaco_editor/workers/css.worker-WHRSVGl1.js",
         "typescript": "monaco_editor/workers/ts.worker-C2JmUdEW.js",
@@ -19,7 +19,7 @@
         "json": "monaco_editor/workers/json.worker-CgbuiJEo.js",
         "html": "monaco_editor/workers/html.worker-jy9DghIH.js"
       },
-      "scanned_at": "2026-11-02T02:58:57.405958+00:00",
+      "scanned_at": "2026-11-02T03:28:14.883836+00:00",
       "scan_result": "clean"
     }
   }

@@ -63,6 +63,20 @@
     var BASE_PATH = "${base_path}";
 
     /**
+     * Monaco language label -> worker label. Monaco asks for a worker per
+     * language, but several languages are served by one worker bundle
+     * (e.g. JavaScript runs on the TypeScript language service).
+     * @type {Object<string, string>}
+     */
+    var MONACO_WORKER_ALIASES = {
+        javascript: "typescript",
+        less: "css",
+        scss: "css",
+        handlebars: "html",
+        razor: "html"
+    };
+
+    /**
      * Convert a package name into the window-safe global name that
      * `use()` looks up (e.g. "chart.js" -> "chart_js").
      * @param {string} name npm package name.
@@ -156,7 +170,8 @@
                 if (name === "monaco-editor") {
                     w.MonacoEnvironment = w.MonacoEnvironment || {};
                     w.MonacoEnvironment.getWorkerUrl = function(moduleId, label) {
-                        var worker = workers[label] || workers.editor;
+                        // Languages that share another language's worker.
+                        var worker = workers[label] || workers[MONACO_WORKER_ALIASES[label]] || workers.editor;
                         if (!worker) {
                             throw new Error("No worker asset registered for Monaco label: " + label);
                         }
