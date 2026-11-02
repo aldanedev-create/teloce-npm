@@ -7,9 +7,9 @@ Scope: only manifest.json generation.
 import json
 
 from teloce_npm.generator.manifest import (
+    MANIFEST_VERSION,
     generate_manifest,
     write_manifest,
-    MANIFEST_VERSION,
 )
 
 

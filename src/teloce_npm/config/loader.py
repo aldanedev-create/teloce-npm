@@ -4,15 +4,16 @@ Load, merge, and validate teloce-npm.json configuration.
 
 import json
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from teloce_npm.utils.errors import ConfigError
 from teloce_npm.utils.logging import logger
+
 from .defaults import DEFAULT_CONFIG
 from .schema import validate_config
 
 
-def load_config(project_root: Path = Path(".")) -> Dict[str, Any]:
+def load_config(project_root: Path = Path(".")) -> dict[str, Any]:
     """
     Load the configuration for a Teloce-NPM project.
 
@@ -41,20 +42,19 @@ def load_config(project_root: Path = Path(".")) -> Dict[str, Any]:
     # ------------------------------------------------------------------
     # 1. Read user config (or start with empty dict)
     # ------------------------------------------------------------------
-    user_config: Dict[str, Any] = {}
+    user_config: dict[str, Any] = {}
     if config_path.exists():
         try:
             raw = config_path.read_text(encoding="utf-8")
             user_config = json.loads(raw)
         except json.JSONDecodeError as e:
-            raise ConfigError(f"Invalid JSON in {config_path}: {e}")
+            raise ConfigError(f"Invalid JSON in {config_path}: {e}") from e
         except OSError as e:
-            raise ConfigError(f"Could not read {config_path}: {e}")
+            raise ConfigError(f"Could not read {config_path}: {e}") from e
 
         if not isinstance(user_config, dict):
             raise ConfigError(
-                f"Config file must be a JSON object. "
-                f"Got: {type(user_config).__name__}"
+                f"Config file must be a JSON object. " f"Got: {type(user_config).__name__}"
             )
 
         logger.debug(f"Loaded configuration from {config_path}")
@@ -64,13 +64,13 @@ def load_config(project_root: Path = Path(".")) -> Dict[str, Any]:
     # ------------------------------------------------------------------
     # 2. Build merged config (deep copy of defaults)
     # ------------------------------------------------------------------
-    config: Dict[str, Any] = {
+    config: dict[str, Any] = {
         "packages": list(DEFAULT_CONFIG["packages"]),
         "entry_html": DEFAULT_CONFIG["entry_html"],
         "output_dir": DEFAULT_CONFIG["output_dir"],
         "cache_dir": DEFAULT_CONFIG["cache_dir"],
         "registry": DEFAULT_CONFIG["registry"],
-        "base_path": DEFAULT_CONFIG["base_path"],           # None by default
+        "base_path": DEFAULT_CONFIG["base_path"],  # None by default
         "security": dict(DEFAULT_CONFIG["security"]),
         "bundling": dict(DEFAULT_CONFIG["bundling"]),
     }
@@ -78,14 +78,13 @@ def load_config(project_root: Path = Path(".")) -> Dict[str, Any]:
     # ------------------------------------------------------------------
     # 3. Merge user config
     # ------------------------------------------------------------------
-    NESTED_KEYS = {"security", "bundling"}
+    nested_keys = {"security", "bundling"}
 
     for key, value in user_config.items():
-        if key in NESTED_KEYS:
+        if key in nested_keys:
             if not isinstance(value, dict):
                 raise ConfigError(
-                    f"Config key '{key}' must be a dictionary. "
-                    f"Got: {type(value).__name__}"
+                    f"Config key '{key}' must be a dictionary. " f"Got: {type(value).__name__}"
                 )
             # Deep merge: only override keys the user provided
             config[key].update(value)

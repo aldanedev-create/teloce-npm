@@ -14,11 +14,13 @@ def _setup(tmp_path):
     (tmp_path / "templates" / "index.html").write_text("<html></html>")
     (tmp_path / "teloce-npm.json").write_text("{}", encoding="utf-8")
     (tmp_path / "teloce-npm.lock").write_text(
-        json.dumps({
-            "lockfile_version": "1.0.0",
-            "generated_at": "2025-01-01T00:00:00Z",
-            "packages": {},
-        }),
+        json.dumps(
+            {
+                "lockfile_version": "1.0.0",
+                "generated_at": "2025-01-01T00:00:00Z",
+                "packages": {},
+            }
+        ),
         encoding="utf-8",
     )
     return tmp_path

@@ -11,7 +11,7 @@ import tarfile
 import pytest
 
 from teloce_npm.downloader import extract_tarball
-from teloce_npm.utils.errors import TeloceNpmError, SecurityError
+from teloce_npm.utils.errors import SecurityError, TeloceNpmError
 
 
 def _make_tarball(path, files):
@@ -37,10 +37,13 @@ def _make_tarball(path, files):
 # ---------------------------------------------------------------------------
 def test_extract_tarball_extracts_files(tmp_path):
     tarball = tmp_path / "pkg.tgz"
-    _make_tarball(tarball, {
-        "package/package.json": '{"name": "test"}',
-        "package/index.js": "module.exports = 1;",
-    })
+    _make_tarball(
+        tarball,
+        {
+            "package/package.json": '{"name": "test"}',
+            "package/index.js": "module.exports = 1;",
+        },
+    )
     extract_dir = tmp_path / "out"
 
     extract_tarball(tarball, extract_dir)

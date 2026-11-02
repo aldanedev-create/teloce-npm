@@ -62,6 +62,7 @@ def test_no_throw_on_missing_package():
 def test_generated_js_is_syntactically_valid():
     """The generated code should parse as valid JavaScript."""
     from teloce_npm.wrapper.ast_parser import parse_source
+
     output = generate_use_js([_pkg("lodash")])
     tree = parse_source(output)
     assert tree.root_node is not None

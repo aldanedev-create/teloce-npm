@@ -2,18 +2,18 @@
 Wrap ES Module (ESM) packages for the browser using Tree-sitter.
 """
 
-from pathlib import Path
-from typing import List
+import re
 
-from .base import BaseWrapper
-from .ast_parser import (
-    parse_source,
-    find_nodes,
-    replace_node,
-    extract_imports,
-    extract_exports,
-)
+from teloce_npm.utils.errors import TeloceNpmError
 from teloce_npm.utils.logging import logger
+
+from .ast_parser import (
+    extract_exports,
+    extract_imports,
+    parse_source,
+    replace_node,
+)
+from .base import BaseWrapper
 
 
 class EsmWrapper(BaseWrapper):
@@ -21,45 +21,68 @@ class EsmWrapper(BaseWrapper):
     def wrap(self) -> str:
         entry_path = self._find_entry_file()
         logger.debug(f"Wrapping ESM entry: {entry_path}")
-        
+
         source_code = entry_path.read_text(encoding="utf-8")
-        
+
         # 1. Parse the source code into an AST
         tree = parse_source(source_code)
 
         # 2. Extract all imports and replace them
         imports = extract_imports(tree)
-        
+
         # Process imports in reverse order to avoid offset issues
         for imp in sorted(imports, key=lambda x: x["node"].start_byte, reverse=True):
             dep_name = imp["source"]
-            safe_name = dep_name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
-            
-            # Determine the import style (default, named, or namespace)
-            # For simplicity, we assume default import
-            # A full implementation would check the import_clause node type
-            replacement = f"const __import_{safe_name} = window.{safe_name};"
-            
+            if dep_name.startswith((".", "/")):
+                raise TeloceNpmError(
+                    f"ESM package '{self.package_name}' has relative imports; "
+                    "it requires bundling."
+                )
+            safe_name = (
+                dep_name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
+            )
+
+            statement = imp["node"].text.decode("utf-8")
+            named = re.match(
+                r"import\s+\{([^}]+)\}\s+from\s+['\"][^'\"]+['\"]\s*;?",
+                statement,
+            )
+            default = re.match(
+                r"import\s+([A-Za-z_$][\w$]*)\s+from\s+['\"][^'\"]+['\"]\s*;?",
+                statement,
+            )
+            if named:
+                replacement = f"const {{{named.group(1)}}} = window.{safe_name};"
+            elif default:
+                replacement = f"const {default.group(1)} = window.{safe_name};"
+            else:
+                replacement = f"window.{safe_name};"
+
             source_code = replace_node(source_code, imp["node"], replacement)
 
         # 3. Extract all exports and handle them
         exports = extract_exports(tree)
-        
+
         # For default exports: replace `export default X` with `var __default_export = X`
         for exp in sorted(exports, key=lambda x: x["node"].start_byte, reverse=True):
             node_text = exp["node"].text.decode("utf-8")
-            
+
             if node_text.startswith("export default"):
                 # Replace `export default` with `var __default_export =`
                 replacement = node_text.replace("export default", "var __default_export =", 1)
                 source_code = replace_node(source_code, exp["node"], replacement)
             elif node_text.startswith("export {"):
+                if " from " in node_text:
+                    raise TeloceNpmError(
+                        f"ESM package '{self.package_name}' has re-exports; "
+                        "it requires bundling."
+                    )
                 # Remove `export { ... };` entirely
                 source_code = replace_node(source_code, exp["node"], "")
             else:
                 # Handle `export const foo = ...` -> `const foo = ...; window.foo = foo;`
                 # This is simplified; a full implementation would track all exported names
-                pass
+                source_code = source_code.replace("export ", "", 1)
 
         # 4. Re-parse the modified code to get the final AST (optional, for validation)
         # tree = parse_source(source_code)
@@ -78,8 +101,8 @@ class EsmWrapper(BaseWrapper):
     // ---- End original package code ----
 
     // Attach the exports to window
-    window['{window_name}'] = (typeof __default_export !== 'undefined') 
-        ? __default_export 
+    window['{window_name}'] = (typeof __default_export !== 'undefined')
+        ? __default_export
         : {{}};
 }})();
 """

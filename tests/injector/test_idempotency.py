@@ -7,12 +7,11 @@ the same final HTML (no duplicated tags).
 """
 
 from teloce_npm.injector.injector import (
+    END_MARKER,
+    START_MARKER,
     inject_scripts,
     remove_scripts,
-    START_MARKER,
-    END_MARKER,
 )
-
 
 SCRIPTS = (
     '<script src="/static/teloce-npm/loader.js" defer></script>\n'

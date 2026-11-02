@@ -28,7 +28,7 @@ def test_default_base_path_contains_use():
 
 def test_uses_defer_attribute():
     tags = generate_script_tags()
-    assert tags.count('defer') == 2
+    assert tags.count("defer") == 2
 
 
 # ---------------------------------------------------------------------------
@@ -52,7 +52,7 @@ def test_trailing_slash_stripped():
 # ---------------------------------------------------------------------------
 def test_contains_newline_between_tags():
     tags = generate_script_tags()
-    assert "loader.js\"" in tags
+    assert 'loader.js"' in tags
     # The use tag must be on a separate line
     lines = tags.strip().split("\n")
     assert len(lines) == 2

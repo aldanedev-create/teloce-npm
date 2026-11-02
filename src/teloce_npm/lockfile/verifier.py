@@ -5,14 +5,13 @@ Answers the question: "Does the current project state match what
 the lockfile says it should be?"
 """
 
-from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
 
-from .manager import LockfileManager
 from teloce_npm.cache import CacheManager
 from teloce_npm.utils.errors import LockfileMismatch
 from teloce_npm.utils.hashing import verify_file_integrity
-from teloce_npm.utils.logging import logger
+
+from .manager import LockfileManager
 
 
 class LockfileVerifier:
@@ -25,7 +24,7 @@ class LockfileVerifier:
     # ------------------------------------------------------------------
     # Verification against cache
     # ------------------------------------------------------------------
-    def verify_against_cache(self) -> Dict[str, Any]:
+    def verify_against_cache(self) -> dict[str, Any]:
         """
         Verify that every package in the lockfile is present in the cache
         and that its cached tarball hash matches the locked integrity hash.
@@ -38,7 +37,7 @@ class LockfileVerifier:
                 - 'extra': list of packages in cache but not in lockfile
         """
         lockfile_packages = self.lockfile.load()["packages"]
-        result = {
+        result: dict[str, Any] = {
             "ok": True,
             "missing": [],
             "corrupted": [],
@@ -79,7 +78,7 @@ class LockfileVerifier:
     # ------------------------------------------------------------------
     def verify_versions(
         self,
-        expected: Dict[str, str],
+        expected: dict[str, str],
     ) -> None:
         """
         Verify that the lockfile versions match the expected versions.
@@ -96,7 +95,9 @@ class LockfileVerifier:
 
         for pkg_name, expected_version in expected.items():
             if pkg_name not in locked:
-                errors.append(f"Package '{pkg_name}' is required by .vel but missing from lockfile.")
+                errors.append(
+                    f"Package '{pkg_name}' is required by .vel but missing from lockfile."
+                )
             elif locked[pkg_name] != expected_version:
                 errors.append(
                     f"Package '{pkg_name}' lockfile version ({locked[pkg_name]}) "
@@ -118,7 +119,7 @@ class LockfileVerifier:
         if not self.lockfile.exists():
             return False
         result = self.verify_against_cache()
-        return result["ok"]
+        return bool(result["ok"])
 
     def report(self) -> str:
         """

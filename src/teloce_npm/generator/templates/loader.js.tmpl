@@ -69,6 +69,22 @@
 
             loading.add(name);
 
+            var workers = info.workers || {};
+            if (Object.keys(workers).length > 0) {
+                window.__teloceNpmWorkers = window.__teloceNpmWorkers || {};
+                window.__teloceNpmWorkers[name] = workers;
+                if (name === "monaco-editor") {
+                    window.MonacoEnvironment = window.MonacoEnvironment || {};
+                    window.MonacoEnvironment.getWorkerUrl = function(moduleId, label) {
+                        var worker = workers[label] || workers.editor;
+                        if (!worker) {
+                            throw new Error("No worker asset registered for Monaco label: " + label);
+                        }
+                        return BASE_PATH + "/" + worker;
+                    };
+                }
+            }
+
             // Load dependencies first (depth-first)
             var deps = info.dependencies || {};
             for (var depName in deps) {

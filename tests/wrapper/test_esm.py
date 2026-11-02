@@ -35,9 +35,7 @@ def test_esm_attaches_default_export_to_window(tmp_path):
 
 
 def test_esm_attaches_empty_object_when_no_default(tmp_path):
-    pkg_dir, pj = _make_esm_package(
-        tmp_path, "const x = 1;\nexport { x };"
-    )
+    pkg_dir, pj = _make_esm_package(tmp_path, "const x = 1;\nexport { x };")
     output = EsmWrapper(pkg_dir, "my-pkg", pj).wrap()
 
     # Empty object is the fallback
@@ -81,9 +79,7 @@ def test_esm_strips_default_export_keyword(tmp_path):
 
 
 def test_esm_handles_export_const(tmp_path):
-    pkg_dir, pj = _make_esm_package(
-        tmp_path, "export const VERSION = '1.0.0';"
-    )
+    pkg_dir, pj = _make_esm_package(tmp_path, "export const VERSION = '1.0.0';")
     output = EsmWrapper(pkg_dir, "my-pkg", pj).wrap()
 
     assert "export const" not in output

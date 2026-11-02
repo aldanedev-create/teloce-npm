@@ -3,6 +3,7 @@
 """
 
 import sys
+
 from teloce_npm.commands import BaseCommand
 from teloce_npm.lockfile import LockfileVerifier
 from teloce_npm.version import __version__

@@ -18,9 +18,9 @@ import json
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Optional, cast
 
-from teloce_npm.utils.file_io import ensure_dir, write_file_atomic, read_file
+from teloce_npm.utils.file_io import ensure_dir, read_file, write_file_atomic
 from teloce_npm.utils.logging import logger
 
 
@@ -72,7 +72,7 @@ class CacheStorage:
         self,
         package_name: str,
         version: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
     ) -> None:
         """Persist package metadata (integrity, download date, scan result)."""
         metadata = dict(metadata)  # don't mutate the caller's dict
@@ -93,13 +93,13 @@ class CacheStorage:
     # ------------------------------------------------------------------
     # Read operations
     # ------------------------------------------------------------------
-    def load_metadata(self, package_name: str, version: str) -> Optional[Dict[str, Any]]:
+    def load_metadata(self, package_name: str, version: str) -> Optional[dict[str, Any]]:
         """Load cached metadata. Returns None if not found or invalid."""
         path = self.metadata_path(package_name, version)
         if not path.exists():
             return None
         try:
-            return json.loads(read_file(path))
+            return cast(dict[str, Any], json.loads(read_file(path)))
         except (json.JSONDecodeError, OSError) as e:
             logger.warning(f"Corrupted cache metadata for {package_name}@{version}: {e}")
             return None

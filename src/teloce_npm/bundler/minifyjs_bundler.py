@@ -10,23 +10,25 @@ cannot handle a package (unresolved relative imports, worker graphs,
 or explicit bundling mode).
 
 Limitations (documented, not solved by this module):
-    - No CSS loader: packages that import './styles.css' will fail.
+    - Worker URL policies remain package-specific.
     - No plugin API: no virtual modules, no custom resolvers.
     - No tsconfig.json: TypeScript path aliases are not resolved.
-    - No custom loaders: .json, .wasm, .node imports are not handled.
+    - No custom loaders: .json, .wasm, and .node imports are not handled.
 """
 
 import json
-import shutil
+import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
+from teloce_npm.bundler.asset_pipeline import copy_worker_assets, prepare_package
 from teloce_npm.utils.errors import TeloceNpmError
 from teloce_npm.utils.logging import logger
 
 
-class MinifyJSNotAvailable(TeloceNpmError):
+class MinifyJSNotAvailable(TeloceNpmError):  # noqa: N818
     """Raised when MinifyJS is not installed but bundling is required."""
+
     pass
 
 
@@ -37,13 +39,14 @@ def _import_minifyjs():
     Returns the bundle() and BundleError symbols.
     """
     try:
-        from minifyjs import bundle, BundleError
+        from minifyjs import BundleError, bundle
+
         return bundle, BundleError
-    except ImportError:
+    except ImportError as error:
         raise MinifyJSNotAvailable(
             "MinifyJS is not installed. Bundling complex packages requires it.\n"
             "Install with: pip install minifyjs"
-        )
+        ) from error
 
 
 class MinifyJSBundler:
@@ -62,6 +65,17 @@ class MinifyJSBundler:
         self.sourcemap = config.get("sourcemap", None)
         self.splitting = config.get("splitting", False)
         self.platform = config.get("platform", "browser")
+        self.tree_shaking = config.get("tree_shaking", True)
+        self.packages = config.get("packages", "bundle")
+        self.external = config.get("external", [])
+        self.define = config.get("define", {})
+        self.drop = config.get("drop", [])
+        self.charset = config.get("charset", "utf8")
+        self.legal_comments = config.get("legal_comments", None)
+        self.entry_names = config.get("entry_names", None)
+        self.chunk_names = config.get("chunk_names", None)
+        self.asset_names = config.get("asset_names", None)
+        self.metafile = config.get("metafile", None)
 
     # ------------------------------------------------------------------
     # Public API
@@ -71,7 +85,7 @@ class MinifyJSBundler:
         extracted_dir: Path,
         package_name: str,
         output_dir: Path,
-    ) -> Dict[str, object]:
+    ) -> dict[str, object]:
         """
         Bundle an extracted npm package into a browser-ready file.
 
@@ -92,7 +106,17 @@ class MinifyJSBundler:
             MinifyJSNotAvailable: If minifyjs is not installed.
             TeloceNpmError: If bundling fails or the entry point is unresolved.
         """
-        bundle, BundleError = _import_minifyjs()
+        with tempfile.TemporaryDirectory(prefix="teloce-npm-assets-") as temp_dir:
+            prepared_dir = prepare_package(extracted_dir, Path(temp_dir))
+            return self._bundle_prepared_package(prepared_dir, package_name, output_dir)
+
+    def _bundle_prepared_package(
+        self,
+        extracted_dir: Path,
+        package_name: str,
+        output_dir: Path,
+    ) -> dict[str, object]:
+        bundle, bundle_error = _import_minifyjs()
 
         # 1. Resolve the entry point
         entry_file = self._resolve_entry(extracted_dir, package_name)
@@ -111,14 +135,29 @@ class MinifyJSBundler:
             "mangle": self.minify,
             "target": self.target,
             "format": self.format,
+            "tree_shaking": self.tree_shaking,
+            "packages": self.packages,
+            "external": self.external,
+            "define": self.define,
+            "drop": self.drop,
+            "charset": self.charset,
             "banner": (
-                f"// Bundled by Teloce-NPM (MinifyJS / esbuild)\n"
-                f"// Package: {package_name}"
+                f"// Bundled by Teloce-NPM (MinifyJS / esbuild)\n" f"// Package: {package_name}"
             ),
         }
 
         if self.sourcemap:
             kwargs["sourcemap"] = self.sourcemap
+        if self.legal_comments:
+            kwargs["legal_comments"] = self.legal_comments
+        if self.entry_names:
+            kwargs["entry_names"] = self.entry_names
+        if self.chunk_names:
+            kwargs["chunk_names"] = self.chunk_names
+        if self.asset_names:
+            kwargs["asset_names"] = self.asset_names
+        if self.metafile:
+            kwargs["metafile"] = str(bundle_dir / self.metafile)
 
         if self.splitting:
             kwargs["outdir"] = str(bundle_dir)
@@ -129,39 +168,28 @@ class MinifyJSBundler:
         logger.debug(f"MinifyJS bundling {package_name} from {entry_file}")
         try:
             result = bundle(**kwargs)
-        except BundleError as e:
-            raise TeloceNpmError(
-                f"MinifyJS failed to bundle '{package_name}': {e}"
-            ) from e
+        except bundle_error as error:
+            raise TeloceNpmError(f"MinifyJS failed to bundle '{package_name}': {error}") from error
 
         # 4. Handle errors surfaced via diagnostics
         diagnostics = getattr(result, "diagnostics", []) or []
-        errors = [
-            d for d in diagnostics
-            if _diag_severity(d) == "error"
-        ]
+        errors = [d for d in diagnostics if _diag_severity(d) == "error"]
         if errors:
             messages = "\n".join(f"  - {_diag_text(d)}" for d in errors)
-            raise TeloceNpmError(
-                f"Bundle errors for '{package_name}':\n{messages}"
-            )
+            raise TeloceNpmError(f"Bundle errors for '{package_name}':\n{messages}")
 
         # 5. Collect written files
-        if self.splitting:
-            written = sorted(bundle_dir.glob("*.js"))
-        else:
-            written = [bundle_dir / f"{safe}.js"]
+        written = sorted(bundle_dir.glob("*.js")) if self.splitting else [bundle_dir / f"{safe}.js"]
 
         written = [p for p in written if p.exists()]
         if not written:
-            raise TeloceNpmError(
-                f"MinifyJS produced no output files for '{package_name}'"
-            )
+            raise TeloceNpmError(f"MinifyJS produced no output files for '{package_name}'")
+
+        copy_worker_assets(extracted_dir, bundle_dir)
 
         total_bytes = sum(p.stat().st_size for p in written)
         logger.debug(
-            f"MinifyJS bundled {package_name}: "
-            f"{len(written)} file(s), {total_bytes} bytes"
+            f"MinifyJS bundled {package_name}: " f"{len(written)} file(s), {total_bytes} bytes"
         )
 
         return {
@@ -183,16 +211,12 @@ class MinifyJSBundler:
         """
         pkg_json = package_dir / "package.json"
         if not pkg_json.exists():
-            raise TeloceNpmError(
-                f"No package.json found for '{package_name}' in {package_dir}"
-            )
+            raise TeloceNpmError(f"No package.json found for '{package_name}' in {package_dir}")
 
         try:
             data = json.loads(pkg_json.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
-            raise TeloceNpmError(
-                f"Invalid package.json for '{package_name}': {e}"
-            ) from e
+            raise TeloceNpmError(f"Invalid package.json for '{package_name}': {e}") from e
 
         for field in ("module", "browser", "main"):
             value = data.get(field)
@@ -216,13 +240,7 @@ class MinifyJSBundler:
     @staticmethod
     def _safe_name(package_name: str) -> str:
         """Convert a package name into a filesystem-safe identifier."""
-        return (
-            package_name
-            .replace("@", "")
-            .replace("/", "_")
-            .replace("-", "_")
-            .replace(".", "_")
-        )
+        return package_name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
 
 
 # ----------------------------------------------------------------------

@@ -3,6 +3,7 @@
 """
 
 import requests
+
 from teloce_npm.commands import BaseCommand
 
 
@@ -15,7 +16,7 @@ class SearchCommand(BaseCommand):
         params = {"text": query, "size": 20}
 
         try:
-            response = requests.get(url, params=params, timeout=15)
+            response = requests.get(url, params=params, timeout=15)  # type: ignore[arg-type]
             response.raise_for_status()
             data = response.json()
         except Exception as e:

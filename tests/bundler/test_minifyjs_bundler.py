@@ -22,12 +22,12 @@ from teloce_npm.bundler.minifyjs_bundler import (
 )
 from teloce_npm.utils.errors import TeloceNpmError
 
-
 # Skip the whole file if minifyjs isn't installed — but the import
 # path we mock against is `teloce_npm.bundler.minifyjs_bundler._import_minifyjs`
 # so we can still test config/entrypoint logic even without minifyjs.
 try:
     import minifyjs  # noqa: F401
+
     HAS_MINIFYJS = True
 except ImportError:
     HAS_MINIFYJS = False
@@ -37,9 +37,7 @@ def _make_package(tmp_path, package_json: dict, entry_content: str = "export def
     """Create a minimal extracted package directory."""
     pkg_dir = tmp_path / "package"
     pkg_dir.mkdir()
-    (pkg_dir / "package.json").write_text(
-        json.dumps(package_json), encoding="utf-8"
-    )
+    (pkg_dir / "package.json").write_text(json.dumps(package_json), encoding="utf-8")
     entry_name = package_json.get("main") or package_json.get("module") or "index.js"
     (pkg_dir / entry_name).write_text(entry_content, encoding="utf-8")
     return pkg_dir
@@ -64,32 +62,48 @@ def test_default_config_is_applied():
     assert b.format == "esm"
     assert b.platform == "browser"
     assert b.splitting is False
+    assert b.tree_shaking is True
+    assert b.packages == "bundle"
 
 
 def test_custom_config_is_respected():
-    b = MinifyJSBundler({
-        "minify": False,
-        "target": "es2018",
-        "format": "iife",
-        "splitting": True,
-        "platform": "neutral",
-        "sourcemap": "inline",
-    })
+    b = MinifyJSBundler(
+        {
+            "minify": False,
+            "target": "es2018",
+            "format": "iife",
+            "splitting": True,
+            "platform": "neutral",
+            "sourcemap": "inline",
+            "tree_shaking": False,
+            "packages": "external",
+            "external": ["react"],
+            "define": {"process.env.NODE_ENV": '"production"'},
+            "drop": ["console"],
+        }
+    )
     assert b.minify is False
     assert b.target == "es2018"
     assert b.format == "iife"
     assert b.splitting is True
     assert b.platform == "neutral"
     assert b.sourcemap == "inline"
+    assert b.tree_shaking is False
+    assert b.packages == "external"
+    assert b.external == ["react"]
+    assert b.define == {"process.env.NODE_ENV": '"production"'}
+    assert b.drop == ["console"]
 
 
 # ---------------------------------------------------------------------------
 # Entry-point resolution
 # ---------------------------------------------------------------------------
 def test_resolve_entry_uses_module_field(tmp_path):
-    pkg = _make_package(tmp_path, {
-        "name": "x", "module": "esm.js", "main": "cjs.js"
-    }, entry_content="export default 1;")
+    pkg = _make_package(
+        tmp_path,
+        {"name": "x", "module": "esm.js", "main": "cjs.js"},
+        entry_content="export default 1;",
+    )
     (pkg / "esm.js").write_text("export default 1;", encoding="utf-8")
     (pkg / "cjs.js").write_text("module.exports = 1;", encoding="utf-8")
 
@@ -120,7 +134,7 @@ def test_resolve_entry_missing_package_json_raises(tmp_path):
     pkg.mkdir()
 
     b = MinifyJSBundler()
-    with pytest.raises(TeloceNpmError, match="No package.json"):
+    with pytest.raises(TeloceNpmError, match=r"No package\.json"):
         b._resolve_entry(pkg, "x")
 
 
@@ -130,7 +144,7 @@ def test_resolve_entry_invalid_json_raises(tmp_path):
     (pkg / "package.json").write_text("{ not json", encoding="utf-8")
 
     b = MinifyJSBundler()
-    with pytest.raises(TeloceNpmError, match="Invalid package.json"):
+    with pytest.raises(TeloceNpmError, match=r"Invalid package\.json"):
         b._resolve_entry(pkg, "x")
 
 
@@ -177,12 +191,14 @@ def test_bundle_package_missing_minifyjs_raises(tmp_path):
     pkg = _make_package(tmp_path, {"name": "x", "main": "index.js"})
 
     b = MinifyJSBundler()
-    with patch(
-        "teloce_npm.bundler.minifyjs_bundler._import_minifyjs",
-        side_effect=MinifyJSNotAvailable("minifyjs is not installed"),
+    with (
+        patch(
+            "teloce_npm.bundler.minifyjs_bundler._import_minifyjs",
+            side_effect=MinifyJSNotAvailable("minifyjs is not installed"),
+        ),
+        pytest.raises(MinifyJSNotAvailable, match="not installed"),
     ):
-        with pytest.raises(MinifyJSNotAvailable, match="not installed"):
-            b.bundle_package(pkg, "x", tmp_path / "dist")
+        b.bundle_package(pkg, "x", tmp_path / "dist")
 
 
 def test_bundle_package_bundle_error_raises(tmp_path):
@@ -194,15 +210,18 @@ def test_bundle_package_bundle_error_raises(tmp_path):
     def fake_import():
         def fake_bundle(**kwargs):
             raise FakeBundleError("esbuild failed")
+
         return fake_bundle, FakeBundleError
 
     b = MinifyJSBundler()
-    with patch(
-        "teloce_npm.bundler.minifyjs_bundler._import_minifyjs",
-        side_effect=fake_import,
+    with (
+        patch(
+            "teloce_npm.bundler.minifyjs_bundler._import_minifyjs",
+            side_effect=fake_import,
+        ),
+        pytest.raises(TeloceNpmError, match="MinifyJS failed to bundle"),
     ):
-        with pytest.raises(TeloceNpmError, match="MinifyJS failed to bundle"):
-            b.bundle_package(pkg, "x", tmp_path / "dist")
+        b.bundle_package(pkg, "x", tmp_path / "dist")
 
 
 def test_bundle_package_diagnostics_with_error_raises(tmp_path):
@@ -223,15 +242,18 @@ def test_bundle_package_diagnostics_with_error_raises(tmp_path):
             result.diagnostics = [FakeDiag()]
             result.bytes_saved = 0
             return result
+
         return fake_bundle, FakeBundleError
 
     b = MinifyJSBundler()
-    with patch(
-        "teloce_npm.bundler.minifyjs_bundler._import_minifyjs",
-        side_effect=fake_import,
+    with (
+        patch(
+            "teloce_npm.bundler.minifyjs_bundler._import_minifyjs",
+            side_effect=fake_import,
+        ),
+        pytest.raises(TeloceNpmError, match="Bundle errors"),
     ):
-        with pytest.raises(TeloceNpmError, match="Bundle errors"):
-            b.bundle_package(pkg, "x", tmp_path / "dist")
+        b.bundle_package(pkg, "x", tmp_path / "dist")
 
 
 # ---------------------------------------------------------------------------

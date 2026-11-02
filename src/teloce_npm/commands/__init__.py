@@ -7,17 +7,17 @@ registry client, scanner) so each command file focuses on its unique logic.
 
 import json
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Optional, cast
 
-from teloce_npm.config import load_config
 from teloce_npm.adapters import get_adapter
-from teloce_npm.lockfile import LockfileManager
 from teloce_npm.cache import CacheManager
+from teloce_npm.config import load_config
+from teloce_npm.lockfile import LockfileManager
 from teloce_npm.registry import RegistryClient
 from teloce_npm.utils.logging import logger
 
 
-def parse_package_spec(spec: str) -> Tuple[str, str]:
+def parse_package_spec(spec: str) -> tuple[str, str]:
     """
     Parse a package spec into (name, version_range).
 
@@ -32,7 +32,7 @@ def parse_package_spec(spec: str) -> Tuple[str, str]:
         # Scoped package
         if spec.count("@") >= 2:
             idx = spec.rfind("@")
-            return spec[:idx], spec[idx + 1:]
+            return spec[:idx], spec[idx + 1 :]
         return spec, "*"
 
     if "@" in spec:
@@ -45,13 +45,13 @@ def parse_package_spec(spec: str) -> Tuple[str, str]:
 class BaseCommand:
     """Shared setup for all commands."""
 
-    def __init__(self, project_root: Path = None):
+    def __init__(self, project_root: Optional[Path] = None):
         self.project_root = project_root or Path.cwd()
-        self.config = None
-        self.adapter = None
-        self.lockfile = None
-        self.cache = None
-        self.registry = None
+        self.config: dict[str, Any] = {}
+        self.adapter: Any = None
+        self.lockfile: Any = None
+        self.cache: Any = None
+        self.registry: Any = None
 
     def _setup(self, verbose: bool = False) -> None:
         """Load config, build adapter, lockfile, cache, and registry client."""
@@ -74,7 +74,7 @@ class BaseCommand:
     def _read_raw_config(self) -> dict:
         config_path = self.project_root / "teloce-npm.json"
         if config_path.exists():
-            return json.loads(config_path.read_text(encoding="utf-8"))
+            return cast(dict[Any, Any], json.loads(config_path.read_text(encoding="utf-8")))
         return {}
 
     def _write_raw_config(self, data: dict) -> None:
@@ -89,14 +89,17 @@ class BaseCommand:
         data = self.lockfile.load()
         result = []
         for name, entry in data["packages"].items():
-            result.append({
-                "name": name,
-                "version": entry["version"],
-                "file": entry["wrapped"],
-                "size": entry["size"],
-                "integrity": entry["integrity"],
-                "dependencies": entry.get("dependencies", {}),
-            })
+            result.append(
+                {
+                    "name": name,
+                    "version": entry["version"],
+                    "file": entry["wrapped"],
+                    "size": entry["size"],
+                    "integrity": entry["integrity"],
+                    "dependencies": entry.get("dependencies", {}),
+                    "workers": entry.get("workers", {}),
+                }
+            )
         return result
 
 

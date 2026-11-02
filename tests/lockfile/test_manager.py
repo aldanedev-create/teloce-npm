@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from teloce_npm.lockfile.manager import LockfileManager, LOCKFILE_FILENAME
+from teloce_npm.lockfile.manager import LOCKFILE_FILENAME, LockfileManager
 from teloce_npm.utils.errors import ConfigError
 
 
@@ -96,6 +96,7 @@ def test_save_updates_generated_at(manager):
 
     # Second save must update the timestamp (or at least be a valid ISO string)
     import time
+
     time.sleep(0.01)
     manager.save()
     second = json.loads(manager.path.read_text(encoding="utf-8"))["generated_at"]

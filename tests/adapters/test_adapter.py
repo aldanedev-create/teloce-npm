@@ -5,8 +5,6 @@ Scope: path resolution, base_path derivation, injection delegation,
 and factory behavior. No network, no registry, no bundling.
 """
 
-import json
-
 import pytest
 
 from teloce_npm.adapters import ProjectAdapter, get_adapter

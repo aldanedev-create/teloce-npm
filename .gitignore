@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# Generated package/build output
+build/
+dist/
+examples/*/dist/
+examples/*/static/teloce-npm/
+.teloce-npm/
+
+# Local Xerj indexes and reference clones
+xerj_data/
+teloce-py-reference/

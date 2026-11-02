@@ -7,18 +7,17 @@ for running all security checks on a package.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-
-from teloce_npm.utils.logging import logger
+from typing import Any
 
 
 @dataclass
 class SecurityPolicy:
     """
     Configuration for security checks.
-    
+
     Mirrors the 'security' block in teloce-npm.json.
     """
+
     # Integrity
     verify_integrity: bool = True
     lockfile: bool = True
@@ -34,7 +33,7 @@ class SecurityPolicy:
     fail_on_critical: bool = False
 
     # Network
-    allowed_registries: List[str] = field(default_factory=lambda: ["https://registry.npmjs.org"])
+    allowed_registries: list[str] = field(default_factory=lambda: ["https://registry.npmjs.org"])
     block_unknown_domains: bool = True
 
     # Wrapping
@@ -42,13 +41,13 @@ class SecurityPolicy:
     polyfill_browser: bool = True
 
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> "SecurityPolicy":
+    def from_config(cls, config: dict[str, Any]) -> "SecurityPolicy":
         """
         Build a SecurityPolicy from a configuration dictionary.
-        
+
         Args:
             config: The 'security' block from teloce-npm.json.
-            
+
         Returns:
             A SecurityPolicy instance.
         """
@@ -65,20 +64,20 @@ def run_security_checks(
     package_dir: Path,
     package_name: str,
     policy: SecurityPolicy,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Run the full security pipeline on an extracted package.
-    
+
     Pipeline:
         1. Install script blocking
         2. Malware scanning (AST-based)
         3. Vulnerability check (OSV)
-        
+
     Args:
         package_dir: The extracted package directory.
         package_name: The name of the package.
         policy: The security policy to apply.
-        
+
     Returns:
         A dict with 'safe' (bool) and 'findings' (list of issues).
     """
@@ -88,19 +87,23 @@ def run_security_checks(
     # 1. Install script blocking
     if policy.block_install_scripts:
         from .install_policy import check_install_scripts
+
         try:
             check_install_scripts(package_dir, package_name)
         except Exception as e:
-            findings.append({
-                "type": "install_script",
-                "severity": "HIGH",
-                "message": str(e),
-            })
+            findings.append(
+                {
+                    "type": "install_script",
+                    "severity": "HIGH",
+                    "message": str(e),
+                }
+            )
             is_safe = False
 
     # 2. Malware scanning
     if policy.scan_packages:
         from .malware_scanner import scan_package
+
         result = scan_package(package_dir, package_name, policy)
         if not result["safe"]:
             findings.extend(result["findings"])

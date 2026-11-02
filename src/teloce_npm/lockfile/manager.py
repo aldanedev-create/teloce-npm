@@ -5,18 +5,18 @@ Lockfile CRUD operations for Teloce-NPM.
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Optional, cast
+
+from teloce_npm.utils.errors import ConfigError
+from teloce_npm.utils.file_io import read_file, write_file_atomic
+from teloce_npm.utils.logging import logger
 
 from .schema import (
     empty_lockfile,
-    validate_lockfile,
-    make_package_entry,
     get_package_versions,
+    make_package_entry,
+    validate_lockfile,
 )
-from teloce_npm.utils.file_io import read_file, write_file_atomic
-from teloce_npm.utils.errors import ConfigError
-from teloce_npm.utils.logging import logger
-
 
 LOCKFILE_FILENAME = "teloce-npm.lock"
 
@@ -26,12 +26,12 @@ class LockfileManager:
 
     def __init__(self, project_root: Path):
         self.path = project_root / LOCKFILE_FILENAME
-        self._data: Optional[Dict[str, Any]] = None
+        self._data: Optional[dict[str, Any]] = None
 
     # ------------------------------------------------------------------
     # Load / Save
     # ------------------------------------------------------------------
-    def load(self) -> Dict[str, Any]:
+    def load(self) -> dict[str, Any]:
         """
         Load the lockfile from disk.
 
@@ -50,7 +50,7 @@ class LockfileManager:
             raw = read_file(self.path)
             data = json.loads(raw)
         except json.JSONDecodeError as e:
-            raise ConfigError(f"Invalid JSON in {self.path}: {e}")
+            raise ConfigError(f"Invalid JSON in {self.path}: {e}") from e
 
         validate_lockfile(data)
         self._data = data
@@ -59,7 +59,8 @@ class LockfileManager:
     def save(self) -> None:
         """Persist the in-memory lockfile to disk."""
         if self._data is None:
-            raise RuntimeError("Cannot save lockfile: no data loaded.")
+            self.load()
+        assert self._data is not None
 
         # Refresh the timestamp
         self._data["generated_at"] = datetime.now(timezone.utc).isoformat()
@@ -83,7 +84,8 @@ class LockfileManager:
         integrity: str,
         wrapped_filename: str,
         size: int,
-        dependencies: Optional[Dict[str, str]] = None,
+        dependencies: Optional[dict[str, str]] = None,
+        workers: Optional[dict[str, str]] = None,
         scan_result: str = "clean",
     ) -> None:
         """Add or update a package entry in the lockfile."""
@@ -96,6 +98,7 @@ class LockfileManager:
             wrapped_filename=wrapped_filename,
             size=size,
             dependencies=dependencies,
+            workers=workers,
             scan_result=scan_result,
         )
 
@@ -116,9 +119,9 @@ class LockfileManager:
             return True
         return False
 
-    def get_package(self, package_name: str) -> Optional[Dict[str, Any]]:
+    def get_package(self, package_name: str) -> Optional[dict[str, Any]]:
         """Return the lockfile entry for a package, or None if absent."""
-        return self.load()["packages"].get(package_name)
+        return cast(Optional[dict[str, Any]], self.load()["packages"].get(package_name))
 
     def has_package(self, package_name: str) -> bool:
         """Return True if the package is in the lockfile."""
@@ -134,7 +137,7 @@ class LockfileManager:
         entry = self.get_package(package_name)
         return entry["integrity"] if entry else None
 
-    def list_packages(self) -> Dict[str, str]:
+    def list_packages(self) -> dict[str, str]:
         """Return {package_name: version} for all locked packages."""
         return get_package_versions(self.load())
 
@@ -146,7 +149,7 @@ class LockfileManager:
     # ------------------------------------------------------------------
     # Diagnostics
     # ------------------------------------------------------------------
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Return a summary of the lockfile (for `teloce-npm list` and `doctor`)."""
         data = self.load()
         return {

@@ -8,19 +8,20 @@ Produces the three files the browser needs:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
+from teloce_npm.utils.logging import logger
+
+from .loader_js import generate_loader_js, write_loader_js
 from .manifest import generate_manifest, write_manifest
 from .use_js import generate_use_js, write_use_js
-from .loader_js import generate_loader_js, write_loader_js
-from teloce_npm.utils.logging import logger
 
 
 def generate_all(
-    packages: List[Dict[str, Any]],
+    packages: list[dict[str, Any]],
     output_dir: Path,
     base_path: str = "/static/teloce-npm",
-) -> Dict[str, Path]:
+) -> dict[str, Path]:
     """
     Generate all three runtime files in one call.
 
@@ -45,18 +46,16 @@ def generate_all(
         "loader": write_loader_js(output_dir, base_path=base_path),
     }
 
-    logger.debug(
-        f"Generated {len(paths)} runtime files for {len(packages)} package(s)."
-    )
+    logger.debug(f"Generated {len(paths)} runtime files for {len(packages)} package(s).")
     return paths
 
 
 __all__ = [
     "generate_all",
+    "generate_loader_js",
     "generate_manifest",
     "generate_use_js",
-    "generate_loader_js",
+    "write_loader_js",
     "write_manifest",
     "write_use_js",
-    "write_loader_js",
 ]

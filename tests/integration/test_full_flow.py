@@ -13,7 +13,8 @@ import pytest
 from teloce_npm.commands.install import InstallCommand
 from teloce_npm.registry import RegistryClient
 from teloce_npm.utils.hashing import compute_sha512
-from ._helpers import setup_project, make_fake_tarball, fake_registry_metadata
+
+from ._helpers import fake_registry_metadata, make_fake_tarball, setup_project
 
 
 @pytest.fixture
@@ -35,6 +36,7 @@ def mocked_pipeline(monkeypatch):
     def fake_extract(tarball_path, extract_dir):
         # Let the real extractor run on the real tarball
         from teloce_npm.downloader import extract_tarball
+
         return extract_tarball(tarball_path, extract_dir)
 
     def fake_wrap(extracted, name):
@@ -46,21 +48,11 @@ def mocked_pipeline(monkeypatch):
     def fake_vulns(name, version):
         return []
 
-    monkeypatch.setattr(
-        "teloce_npm.commands.install.download_tarball", fake_download
-    )
-    monkeypatch.setattr(
-        "teloce_npm.commands.install.extract_tarball", fake_extract
-    )
-    monkeypatch.setattr(
-        "teloce_npm.commands.install.wrap_package", fake_wrap
-    )
-    monkeypatch.setattr(
-        "teloce_npm.commands.install.check_vulnerabilities", fake_vulns
-    )
-    monkeypatch.setattr(
-        RegistryClient, "get_package_metadata", fake_get_metadata
-    )
+    monkeypatch.setattr("teloce_npm.commands.install.download_tarball", fake_download)
+    monkeypatch.setattr("teloce_npm.commands.install.extract_tarball", fake_extract)
+    monkeypatch.setattr("teloce_npm.commands.install.wrap_package", fake_wrap)
+    monkeypatch.setattr("teloce_npm.commands.install.check_vulnerabilities", fake_vulns)
+    monkeypatch.setattr(RegistryClient, "get_package_metadata", fake_get_metadata)
 
     return {"tarball": tarball_bytes, "integrity": integrity}
 

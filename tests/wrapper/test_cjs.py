@@ -45,7 +45,8 @@ def test_cjs_attaches_to_window(tmp_path):
 
 def test_cjs_dashes_become_underscores_in_window_name(tmp_path):
     pkg_dir, pj = _make_cjs_package(
-        tmp_path, "module.exports = {};",
+        tmp_path,
+        "module.exports = {};",
         package_json={"name": "my-cool-pkg", "main": "index.js"},
     )
     output = CjsWrapper(pkg_dir, "my-cool-pkg", pj).wrap()
@@ -107,4 +108,4 @@ def test_cjs_preserves_strings_with_require(tmp_path):
     )
     output = CjsWrapper(pkg_dir, "my-pkg", pj).wrap()
 
-    assert 'call require(\'x\')' in output
+    assert "call require('x')" in output

@@ -13,12 +13,13 @@ Provides a clean API used by the install/add commands:
 """
 
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Optional
 
-from .storage import CacheStorage
 from teloce_npm.utils.errors import SecurityError
 from teloce_npm.utils.hashing import verify_file_integrity
 from teloce_npm.utils.logging import logger
+
+from .storage import CacheStorage
 
 
 class CacheManager:
@@ -33,15 +34,15 @@ class CacheManager:
     def has(self, package_name: str, version: str, expected_integrity: str) -> bool:
         """
         Check if a package version is cached AND its tarball matches the expected hash.
-        
+
         If the cached tarball's hash does not match (e.g., the registry re-published),
         the cache entry is invalidated and False is returned.
-        
+
         Args:
             package_name: The package name.
             version: The specific version.
             expected_integrity: The SHA-512 hash from the registry.
-            
+
         Returns:
             True if the package is cached and the hash matches.
         """
@@ -76,9 +77,9 @@ class CacheManager:
     def get_wrapped(self, package_name: str, version: str) -> str:
         """
         Retrieve the wrapped JavaScript output from the cache.
-        
+
         Should only be called after `has()` returns True.
-        
+
         Raises:
             FileNotFoundError: If the wrapped output is missing.
         """
@@ -99,11 +100,11 @@ class CacheManager:
         version: str,
         extracted_dir: Path,
         wrapped_code: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
     ) -> None:
         """
         Store a freshly downloaded + wrapped package in the cache.
-        
+
         Args:
             package_name: The package name.
             version: The specific version.
@@ -115,9 +116,11 @@ class CacheManager:
         target_extracted = self.storage.extracted_dir(package_name, version)
         if target_extracted.exists():
             import shutil
+
             shutil.rmtree(target_extracted)
         target_extracted.parent.mkdir(parents=True, exist_ok=True)
         import shutil
+
         shutil.move(str(extracted_dir), str(target_extracted))
 
         # 2. Save metadata
@@ -128,7 +131,7 @@ class CacheManager:
 
         logger.debug(f"Stored {package_name}@{version} in cache")
 
-    def get_metadata(self, package_name: str, version: str) -> Optional[Dict[str, Any]]:
+    def get_metadata(self, package_name: str, version: str) -> Optional[dict[str, Any]]:
         """Retrieve metadata for a cached package."""
         return self.storage.load_metadata(package_name, version)
 
@@ -143,13 +146,13 @@ class CacheManager:
     # ------------------------------------------------------------------
     # Diagnostics
     # ------------------------------------------------------------------
-    def list_cached(self) -> list[Dict[str, Any]]:
+    def list_cached(self) -> list[dict[str, Any]]:
         """
         Return a summary of all cached packages.
-        
+
         Used by `teloce-npm list` and `teloce-npm doctor`.
         """
-        results = []
+        results: list[dict[str, Any]] = []
         if not self.storage.cache_dir.exists():
             return results
 
@@ -161,13 +164,16 @@ class CacheManager:
             if metadata.exists() and wrapped.exists():
                 try:
                     import json
+
                     meta = json.loads(metadata.read_text(encoding="utf-8"))
-                    results.append({
-                        "name": meta.get("name", entry.name.split("@")[0]),
-                        "version": meta.get("version", "unknown"),
-                        "size": wrapped.stat().st_size,
-                        "cached_at": meta.get("cached_at", "unknown"),
-                    })
+                    results.append(
+                        {
+                            "name": meta.get("name", entry.name.split("@")[0]),
+                            "version": meta.get("version", "unknown"),
+                            "size": wrapped.stat().st_size,
+                            "cached_at": meta.get("cached_at", "unknown"),
+                        }
+                    )
                 except (json.JSONDecodeError, OSError):
                     continue
         return sorted(results, key=lambda x: (x["name"], x["version"]))

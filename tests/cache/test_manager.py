@@ -8,7 +8,6 @@ import pytest
 
 from teloce_npm.cache.manager import CacheManager
 from teloce_npm.utils.hashing import compute_sha512
-from teloce_npm.utils.errors import SecurityError
 
 
 @pytest.fixture

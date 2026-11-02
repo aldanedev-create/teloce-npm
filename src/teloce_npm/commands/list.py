@@ -16,7 +16,7 @@ class ListCommand(BaseCommand):
             return 0
 
         print("Installed packages:\n")
-        total_size = 0
+        total_size: float = 0
         for name in sorted(packages):
             entry = self.lockfile.get_package(name)
             size = entry.get("size", 0)
@@ -28,7 +28,7 @@ class ListCommand(BaseCommand):
         return 0
 
 
-def _fmt_size(size: int) -> str:
+def _fmt_size(size: float) -> str:
     for unit in ("B", "KB", "MB", "GB"):
         if size < 1024:
             return f"{size:.1f} {unit}"

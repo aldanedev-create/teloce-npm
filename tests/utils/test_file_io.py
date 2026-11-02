@@ -3,9 +3,8 @@ Tests for teloce_npm.utils.file_io.
 """
 
 import pytest
-from pathlib import Path
 
-from teloce_npm.utils.file_io import read_file, write_file_atomic, ensure_dir
+from teloce_npm.utils.file_io import ensure_dir, read_file, write_file_atomic
 
 
 # ---------------------------------------------------------------------------

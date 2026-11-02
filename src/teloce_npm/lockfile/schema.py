@@ -27,10 +27,9 @@ Example:
 """
 
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Any, Optional
 
 from teloce_npm.utils.errors import ConfigError
-
 
 LOCKFILE_VERSION = "1.0.0"
 
@@ -44,7 +43,7 @@ REQUIRED_PACKAGE_KEYS = {
 }
 
 
-def empty_lockfile() -> Dict[str, Any]:
+def empty_lockfile() -> dict[str, Any]:
     """Return an empty but valid lockfile structure."""
     return {
         "lockfile_version": LOCKFILE_VERSION,
@@ -59,9 +58,10 @@ def make_package_entry(
     integrity: str,
     wrapped_filename: str,
     size: int,
-    dependencies: Dict[str, str] = None,
+    dependencies: Optional[dict[str, str]] = None,
+    workers: Optional[dict[str, str]] = None,
     scan_result: str = "clean",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Build a single package entry for the lockfile.
 
@@ -84,12 +84,13 @@ def make_package_entry(
         "dependencies": dependencies or {},
         "wrapped": wrapped_filename,
         "size": size,
+        "workers": workers or {},
         "scanned_at": datetime.now(timezone.utc).isoformat(),
         "scan_result": scan_result,
     }
 
 
-def validate_lockfile(lockfile: Dict[str, Any]) -> None:
+def validate_lockfile(lockfile: dict[str, Any]) -> None:
     """
     Validate a lockfile structure.
 
@@ -127,14 +128,9 @@ def validate_lockfile(lockfile: Dict[str, Any]) -> None:
         if not isinstance(pkg_entry["size"], int):
             raise ConfigError(f"Lockfile entry '{pkg_name}.size' must be an integer.")
         if not pkg_entry["integrity"].startswith("sha512-"):
-            raise ConfigError(
-                f"Lockfile entry '{pkg_name}.integrity' must be a SHA-512 hash."
-            )
+            raise ConfigError(f"Lockfile entry '{pkg_name}.integrity' must be a SHA-512 hash.")
 
 
-def get_package_versions(lockfile: Dict[str, Any]) -> Dict[str, str]:
+def get_package_versions(lockfile: dict[str, Any]) -> dict[str, str]:
     """Extract a simple {name: version} mapping from a lockfile."""
-    return {
-        name: entry["version"]
-        for name, entry in lockfile.get("packages", {}).items()
-    }
+    return {name: entry["version"] for name, entry in lockfile.get("packages", {}).items()}

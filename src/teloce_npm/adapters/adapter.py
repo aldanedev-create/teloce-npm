@@ -22,7 +22,7 @@ Example:
 """
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Optional
 
 from teloce_npm.utils.errors import ConfigError
 from teloce_npm.utils.logging import logger
@@ -36,7 +36,7 @@ class ProjectAdapter:
     absolute Path objects by `config.loader.load_config()`.
     """
 
-    def __init__(self, config: Dict[str, Any], project_root: Path):
+    def __init__(self, config: dict[str, Any], project_root: Path):
         self.config = config
         self.project_root = project_root
 
@@ -48,7 +48,7 @@ class ProjectAdapter:
     # ------------------------------------------------------------------
     # Preparation
     # ------------------------------------------------------------------
-    def prepare(self) -> Dict[str, Any]:
+    def prepare(self) -> dict[str, Any]:
         """
         Prepare the project for a Teloce-NPM run.
 
@@ -69,9 +69,7 @@ class ProjectAdapter:
                 f"Check the 'entry_html' setting in teloce-npm.json."
             )
         if not self.entry_html.is_file():
-            raise ConfigError(
-                f"Entry HTML path is not a file: {self.entry_html}"
-            )
+            raise ConfigError(f"Entry HTML path is not a file: {self.entry_html}")
 
         # Ensure the output directory exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -125,7 +123,7 @@ class ProjectAdapter:
     # ------------------------------------------------------------------
     # Injection
     # ------------------------------------------------------------------
-    def inject_scripts(self, base_path: str = None) -> None:
+    def inject_scripts(self, base_path: Optional[str] = None) -> None:
         """
         Inject the runtime <script> tags into the entry HTML file.
 
@@ -176,18 +174,12 @@ class ProjectAdapter:
         Convert a package name into a safe file name.
         e.g., '@scope/pkg' -> 'scope_pkg', 'chart.js' -> 'chart_js'
         """
-        return (
-            package_name
-            .replace("@", "")
-            .replace("/", "_")
-            .replace("-", "_")
-            .replace(".", "_")
-        )
+        return package_name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
 
     # ------------------------------------------------------------------
     # Diagnostics
     # ------------------------------------------------------------------
-    def summary(self) -> Dict[str, Any]:
+    def summary(self) -> dict[str, Any]:
         """Return a diagnostic summary for `teloce-npm doctor`."""
         return {
             "entry_html": {
@@ -206,7 +198,7 @@ class ProjectAdapter:
         }
 
 
-def get_adapter(config: Dict[str, Any], project_root: Path = None) -> ProjectAdapter:
+def get_adapter(config: dict[str, Any], project_root: Optional[Path] = None) -> ProjectAdapter:
     """
     Factory function to build a ProjectAdapter from a config dict.
 
@@ -221,9 +213,6 @@ def get_adapter(config: Dict[str, Any], project_root: Path = None) -> ProjectAda
     if project_root is None:
         # Try to derive project root from entry_html if it lives under templates/
         entry = config["entry_html"]
-        if entry.parent.name == "templates":
-            project_root = entry.parent.parent
-        else:
-            project_root = Path.cwd()
+        project_root = entry.parent.parent if entry.parent.name == "templates" else Path.cwd()
 
     return ProjectAdapter(config, project_root)

@@ -15,24 +15,26 @@ All package writes go through either:
     - <output_dir>/<safe_name>/<safe_name>.js  (MinifyJS)
 """
 
+import shutil
 import tempfile
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional, cast
 
+from teloce_npm.bundler.asset_pipeline import copy_worker_assets, discover_worker_assets
 from teloce_npm.commands import BaseCommand, parse_package_spec
-from teloce_npm.scanner import scan_project
-from teloce_npm.registry import extract_version_data, resolve_version
 from teloce_npm.downloader import download_tarball, extract_tarball
+from teloce_npm.generator import generate_all
+from teloce_npm.registry import extract_version_data, resolve_version
+from teloce_npm.scanner import scan_project
 from teloce_npm.security import (
     SecurityPolicy,
-    run_security_checks,
     check_vulnerabilities,
+    run_security_checks,
 )
-from teloce_npm.wrapper import wrap_package
-from teloce_npm.generator import generate_all
 from teloce_npm.utils.errors import PackageNotFoundError, TeloceNpmError
 from teloce_npm.utils.file_io import write_file_atomic
 from teloce_npm.utils.logging import logger
+from teloce_npm.wrapper import wrap_package
 
 
 class InstallCommand(BaseCommand):
@@ -42,7 +44,7 @@ class InstallCommand(BaseCommand):
     # ------------------------------------------------------------------
     def execute(
         self,
-        packages: Optional[List[str]] = None,
+        packages: Optional[list[str]] = None,
         production: bool = False,
         verbose: bool = False,
         no_verify: bool = False,
@@ -62,7 +64,7 @@ class InstallCommand(BaseCommand):
     # ------------------------------------------------------------------
     # Mode A: Install specific packages (with config mutation)
     # ------------------------------------------------------------------
-    def _install_specific(self, packages: List[str], no_verify: bool) -> int:
+    def _install_specific(self, packages: list[str], no_verify: bool) -> int:
         print(f"\n[1/5] Installing {len(packages)} package(s)...")
 
         installed = []
@@ -95,6 +97,7 @@ class InstallCommand(BaseCommand):
             self.adapter.output_dir,
             base_path=self.adapter.get_base_path(),
         )
+        self._sync_teloce_source_assets()
 
         print("\n[3/5] Injecting scripts...")
         self.adapter.inject_scripts()
@@ -151,6 +154,7 @@ class InstallCommand(BaseCommand):
             self.adapter.output_dir,
             base_path=self.adapter.get_base_path(),
         )
+        self._sync_teloce_source_assets()
 
         print("\n[4/6] Injecting scripts...")
         self.adapter.inject_scripts()
@@ -158,7 +162,7 @@ class InstallCommand(BaseCommand):
         print("\n[5/6] Saving lockfile...")
         self.lockfile.save()
 
-        print(f"\n[6/6] Installation complete!")
+        print("\n[6/6] Installation complete!")
         print(f"  {len(installed)} package(s) installed")
         print(f"  Output: {self.adapter.output_dir}")
         return 0
@@ -190,10 +194,7 @@ class InstallCommand(BaseCommand):
             try:
                 version_data = extract_version_data(metadata, resolved)
             except PackageNotFoundError:
-                print(
-                    f"    [WARN] {name}: locked version {resolved} unavailable, "
-                    f"re-resolving"
-                )
+                print(f"    [WARN] {name}: locked version {resolved} unavailable, " f"re-resolving")
                 resolved = resolve_version(metadata, version_range)
                 version_data = extract_version_data(metadata, resolved)
         else:
@@ -206,9 +207,19 @@ class InstallCommand(BaseCommand):
         if self.cache.has(name, resolved, integrity):
             print(f"    [CACHED] {name}@{resolved}")
             wrapped = self.cache.get_wrapped(name, resolved)
-            write_file_atomic(self.adapter.wrapped_file_path(name), wrapped)
-            self._update_lockfile(name, resolved, version_data, wrapped)
-            return resolved
+            previous_entry = self.lockfile.get_package(name) or {}
+            wrapped_filename = previous_entry.get("wrapped", self._default_wrapped_filename(name))
+            write_file_atomic(self.adapter.output_dir / wrapped_filename, wrapped)
+            bundle_dir = self.adapter.output_dir / self._safe_package_name(name)
+            copy_worker_assets(self.cache.get_extracted_dir(name, resolved), bundle_dir)
+            self._update_lockfile(
+                name,
+                resolved,
+                version_data,
+                wrapped,
+                wrapped_filename=wrapped_filename,
+            )
+            return str(resolved)
 
         # 3. Cache miss → download
         print(f"    [DOWNLOADING] {name}@{resolved}...")
@@ -238,9 +249,7 @@ class InstallCommand(BaseCommand):
 
             # 6. Wrap or bundle (3-tuple: code, size, already_written_path)
             try:
-                wrapped_code, wrapped_size, already_written = self._wrap_or_bundle(
-                    extracted, name
-                )
+                wrapped_code, wrapped_size, already_written = self._wrap_or_bundle(extracted, name)
             except Exception as e:
                 print(f"    [ERROR] {name}: wrapping failed - {e}")
                 return None
@@ -272,10 +281,11 @@ class InstallCommand(BaseCommand):
             version_data,
             wrapped_code,
             wrapped_size=wrapped_size,
+            wrapped_filename=self._wrapped_filename(already_written, name),
         )
 
         print(f"    [INSTALLED] {name}@{resolved}")
-        return resolved
+        return str(resolved)
 
     # ------------------------------------------------------------------
     # Wrapping dispatch (Tree-sitter vs MinifyJS)
@@ -284,7 +294,7 @@ class InstallCommand(BaseCommand):
         self,
         extracted: Path,
         name: str,
-    ) -> Tuple[str, int, Optional[Path]]:
+    ) -> tuple[str, int, Optional[Path]]:
         """
         Returns (wrapped_code, wrapped_size, already_written_path).
 
@@ -306,7 +316,7 @@ class InstallCommand(BaseCommand):
         self,
         extracted: Path,
         name: str,
-    ) -> Tuple[str, int, Optional[Path]]:
+    ) -> tuple[str, int, Optional[Path]]:
         """
         Try Tree-sitter first; fall back to MinifyJS on failure.
         """
@@ -315,8 +325,7 @@ class InstallCommand(BaseCommand):
             return code, len(code), None
         except Exception as e:
             logger.info(
-                f"[auto] Tree-sitter wrapper failed for {name}, "
-                f"falling back to MinifyJS: {e}"
+                f"[auto] Tree-sitter wrapper failed for {name}, " f"falling back to MinifyJS: {e}"
             )
             return self._bundle_via_minifyjs(extracted, name)
 
@@ -324,7 +333,7 @@ class InstallCommand(BaseCommand):
         self,
         extracted: Path,
         name: str,
-    ) -> Tuple[str, int, Optional[Path]]:
+    ) -> tuple[str, int, Optional[Path]]:
         """
         Bundle the package using MinifyJS. Writes output directly to
         adapter.output_dir; returns the primary bundle's content, its size,
@@ -339,22 +348,21 @@ class InstallCommand(BaseCommand):
                 package_name=name,
                 output_dir=self.adapter.output_dir,
             )
-        except MinifyJSNotAvailable:
+        except MinifyJSNotAvailable as error:
             raise TeloceNpmError(
-                f"Package '{name}' requires bundling, but MinifyJS is not installed.\n"
-                f"Install with: pip install teloce-npm[bundler]\n"
+                f"Package '{name}' requires bundling, but MinifyJS is unavailable.\n"
+                f"Reinstall teloce-npm to restore its required MinifyJS dependency.\n"
                 f"Or set bundling.mode to 'never' if this package should work "
                 f"without bundling."
-            )
+            ) from error
 
-        output_files = [Path(p) for p in result["output_files"]]
+        output_files = [Path(p) for p in cast(list[str], result["output_files"])]
         total_size = sum(p.stat().st_size for p in output_files)
         primary = output_files[0]
         code = primary.read_text(encoding="utf-8")
 
         logger.debug(
-            f"Bundled {name} via MinifyJS: "
-            f"{len(output_files)} file(s), {total_size} bytes"
+            f"Bundled {name} via MinifyJS: " f"{len(output_files)} file(s), {total_size} bytes"
         )
         return code, total_size, primary
 
@@ -368,6 +376,7 @@ class InstallCommand(BaseCommand):
         version_data: dict,
         wrapped: str,
         wrapped_size: Optional[int] = None,
+        wrapped_filename: Optional[str] = None,
     ) -> None:
         size = wrapped_size if wrapped_size is not None else len(wrapped)
         self.lockfile.add_package(
@@ -375,8 +384,41 @@ class InstallCommand(BaseCommand):
             version=resolved,
             resolved_url=version_data["tarball_url"],
             integrity=version_data["integrity"],
-            wrapped_filename=self.adapter.wrapped_file_path(name).name,
+            wrapped_filename=wrapped_filename or self._default_wrapped_filename(name),
             size=size,
             dependencies=version_data.get("dependencies", {}),
+            workers=self._worker_map(name),
             scan_result="clean",
         )
+
+    def _default_wrapped_filename(self, name: str) -> str:
+        """Return the package path used by the non-bundled wrapper."""
+        return str(
+            self.adapter.wrapped_file_path(name).relative_to(self.adapter.output_dir).as_posix()
+        )
+
+    def _safe_package_name(self, name: str) -> str:
+        return name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
+
+    def _worker_map(self, name: str) -> dict[str, str]:
+        safe_name = self._safe_package_name(name)
+        workers = discover_worker_assets(self.adapter.output_dir / safe_name)
+        return {label: f"{safe_name}/{relative}" for label, relative in workers.items()}
+
+    def _wrapped_filename(self, output_path: Optional[Path], name: str) -> str:
+        """Return a manifest/lockfile path for a bundled or wrapped package."""
+        if output_path is None:
+            return self._default_wrapped_filename(name)
+        return output_path.relative_to(self.adapter.output_dir).as_posix()
+
+    def _sync_teloce_source_assets(self) -> None:
+        """Mirror standard dist/static assets into Teloce-Py's source tree."""
+        try:
+            relative = self.adapter.output_dir.relative_to(self.project_root / "dist" / "static")
+        except ValueError:
+            return
+
+        source_dir = self.project_root / "static" / relative
+        if source_dir.exists():
+            shutil.rmtree(source_dir)
+        shutil.copytree(self.adapter.output_dir, source_dir)

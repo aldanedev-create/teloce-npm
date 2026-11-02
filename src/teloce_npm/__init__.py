@@ -9,22 +9,25 @@ Example:
     >>> install()
 """
 
-from .version import __version__, __author__, __email__, __license__, __url__
+from typing import Optional
+
+from .version import __author__, __email__, __license__, __url__, __version__
 
 # Public API exports
 __all__ = [
-    "__version__",
     "__author__",
     "__email__",
     "__license__",
     "__url__",
-    "install",
+    "__version__",
     "add",
-    "remove",
-    "update",
     "clean",
     "doctor",
+    "install",
+    "remove",
+    "update",
 ]
+
 
 def install(**kwargs):
     """
@@ -43,6 +46,7 @@ def install(**kwargs):
         None
     """
     from .commands.install import InstallCommand
+
     return InstallCommand().execute(**kwargs)
 
 
@@ -58,6 +62,7 @@ def add(package: str, **kwargs):
         None
     """
     from .commands.add import AddCommand
+
     return AddCommand().execute(package, **kwargs)
 
 
@@ -73,10 +78,11 @@ def remove(package: str, **kwargs):
         None
     """
     from .commands.remove import RemoveCommand
+
     return RemoveCommand().execute(package, **kwargs)
 
 
-def update(package: str = None, **kwargs):
+def update(package: Optional[str] = None, **kwargs):
     """
     Update packages to their latest allowed versions.
 
@@ -88,6 +94,7 @@ def update(package: str = None, **kwargs):
         None
     """
     from .commands.update import UpdateCommand
+
     return UpdateCommand().execute(package, **kwargs)
 
 
@@ -102,6 +109,7 @@ def clean(**kwargs):
         None
     """
     from .commands.clean import CleanCommand
+
     return CleanCommand().execute(**kwargs)
 
 
@@ -116,4 +124,5 @@ def doctor(**kwargs):
         None
     """
     from .commands.doctor import DoctorCommand
+
     return DoctorCommand().execute(**kwargs)

@@ -12,7 +12,7 @@ import pytest
 import requests
 
 from teloce_npm.registry import RegistryClient
-from teloce_npm.utils.errors import RegistryError, PackageNotFoundError
+from teloce_npm.utils.errors import PackageNotFoundError, RegistryError
 
 
 def _mock_response(status=200, json_data=None):
@@ -20,9 +20,7 @@ def _mock_response(status=200, json_data=None):
     resp = MagicMock()
     resp.status_code = status
     if status >= 400:
-        resp.raise_for_status.side_effect = requests.exceptions.HTTPError(
-            f"HTTP {status}"
-        )
+        resp.raise_for_status.side_effect = requests.exceptions.HTTPError(f"HTTP {status}")
     resp.json.return_value = json_data or {}
     return resp
 

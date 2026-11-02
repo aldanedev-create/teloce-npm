@@ -24,9 +24,7 @@ def _make_mock_response(chunks, status=200):
     resp.iter_content.return_value = chunks
 
     if status >= 400:
-        resp.raise_for_status.side_effect = requests.exceptions.HTTPError(
-            f"HTTP {status}"
-        )
+        resp.raise_for_status.side_effect = requests.exceptions.HTTPError(f"HTTP {status}")
 
     # __enter__ returns the response itself
     resp.__enter__.return_value = resp
@@ -97,13 +95,15 @@ def test_download_tarball_integrity_mismatch_raises(tmp_path):
     dest = tmp_path / "pkg.tgz"
 
     mock_resp = _make_mock_response([content])
-    with patch("teloce_npm.downloader.tarball.requests.get", return_value=mock_resp):
-        with pytest.raises(SecurityError, match="Integrity check failed"):
-            download_tarball(
-                tarball_url="https://reg.example.com/pkg.tgz",
-                dest_path=dest,
-                expected_integrity=wrong_integrity,
-            )
+    with (
+        patch("teloce_npm.downloader.tarball.requests.get", return_value=mock_resp),
+        pytest.raises(SecurityError, match="Integrity check failed"),
+    ):
+        download_tarball(
+            tarball_url="https://reg.example.com/pkg.tgz",
+            dest_path=dest,
+            expected_integrity=wrong_integrity,
+        )
 
 
 def test_download_tarball_integrity_mismatch_deletes_file(tmp_path):
@@ -112,13 +112,15 @@ def test_download_tarball_integrity_mismatch_deletes_file(tmp_path):
     dest = tmp_path / "pkg.tgz"
 
     mock_resp = _make_mock_response([content])
-    with patch("teloce_npm.downloader.tarball.requests.get", return_value=mock_resp):
-        with pytest.raises(SecurityError):
-            download_tarball(
-                tarball_url="https://reg.example.com/pkg.tgz",
-                dest_path=dest,
-                expected_integrity=wrong_integrity,
-            )
+    with (
+        patch("teloce_npm.downloader.tarball.requests.get", return_value=mock_resp),
+        pytest.raises(SecurityError),
+    ):
+        download_tarball(
+            tarball_url="https://reg.example.com/pkg.tgz",
+            dest_path=dest,
+            expected_integrity=wrong_integrity,
+        )
 
     # The corrupted file must be removed
     assert not dest.exists()
@@ -131,42 +133,48 @@ def test_download_tarball_http_500_raises_registry_error(tmp_path):
     dest = tmp_path / "pkg.tgz"
     mock_resp = _make_mock_response([], status=500)
 
-    with patch("teloce_npm.downloader.tarball.requests.get", return_value=mock_resp):
-        with pytest.raises(RegistryError, match="Failed to download"):
-            download_tarball(
-                tarball_url="https://reg.example.com/pkg.tgz",
-                dest_path=dest,
-                expected_integrity="sha512-whatever",
-            )
+    with (
+        patch("teloce_npm.downloader.tarball.requests.get", return_value=mock_resp),
+        pytest.raises(RegistryError, match="Failed to download"),
+    ):
+        download_tarball(
+            tarball_url="https://reg.example.com/pkg.tgz",
+            dest_path=dest,
+            expected_integrity="sha512-whatever",
+        )
 
 
 def test_download_tarball_network_error_raises_registry_error(tmp_path):
     dest = tmp_path / "pkg.tgz"
 
-    with patch(
-        "teloce_npm.downloader.tarball.requests.get",
-        side_effect=requests.exceptions.ConnectionError("no route"),
+    with (
+        patch(
+            "teloce_npm.downloader.tarball.requests.get",
+            side_effect=requests.exceptions.ConnectionError("no route"),
+        ),
+        pytest.raises(RegistryError, match="Failed to download"),
     ):
-        with pytest.raises(RegistryError, match="Failed to download"):
-            download_tarball(
-                tarball_url="https://reg.example.com/pkg.tgz",
-                dest_path=dest,
-                expected_integrity="sha512-whatever",
-            )
+        download_tarball(
+            tarball_url="https://reg.example.com/pkg.tgz",
+            dest_path=dest,
+            expected_integrity="sha512-whatever",
+        )
 
 
 def test_download_tarball_cleans_up_on_network_error(tmp_path):
     dest = tmp_path / "pkg.tgz"
 
-    with patch(
-        "teloce_npm.downloader.tarball.requests.get",
-        side_effect=requests.exceptions.ConnectionError("no route"),
+    with (
+        patch(
+            "teloce_npm.downloader.tarball.requests.get",
+            side_effect=requests.exceptions.ConnectionError("no route"),
+        ),
+        pytest.raises(RegistryError),
     ):
-        with pytest.raises(RegistryError):
-            download_tarball(
-                tarball_url="https://reg.example.com/pkg.tgz",
-                dest_path=dest,
-                expected_integrity="sha512-whatever",
-            )
+        download_tarball(
+            tarball_url="https://reg.example.com/pkg.tgz",
+            dest_path=dest,
+            expected_integrity="sha512-whatever",
+        )
 
     assert not dest.exists()

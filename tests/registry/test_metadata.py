@@ -9,7 +9,6 @@ import pytest
 from teloce_npm.registry import extract_version_data
 from teloce_npm.utils.errors import PackageNotFoundError
 
-
 SAMPLE_METADATA = {
     "name": "test-pkg",
     "dist-tags": {"latest": "2.0.0"},
@@ -67,7 +66,7 @@ def test_extract_version_data_empty_deps_and_scripts():
 
 
 def test_extract_version_data_missing_version_raises():
-    with pytest.raises(PackageNotFoundError, match="9.9.9"):
+    with pytest.raises(PackageNotFoundError, match=r"9\.9\.9"):
         extract_version_data(SAMPLE_METADATA, "9.9.9")
 
 

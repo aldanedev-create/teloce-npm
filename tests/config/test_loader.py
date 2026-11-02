@@ -11,8 +11,9 @@ Verifies:
 """
 
 import json
-import pytest
 from pathlib import Path
+
+import pytest
 
 from teloce_npm.config import load_config
 from teloce_npm.utils.errors import ConfigError
@@ -41,9 +42,7 @@ def test_load_config_with_user_overrides(tmp_project):
         "packages": ["lodash"],
         "entry_html": "templates/custom.html",
     }
-    (tmp_project / "teloce-npm.json").write_text(
-        json.dumps(config_data), encoding="utf-8"
-    )
+    (tmp_project / "teloce-npm.json").write_text(json.dumps(config_data), encoding="utf-8")
 
     config = load_config(tmp_project)
 
@@ -82,14 +81,12 @@ def test_load_config_cache_dir_default_path(tmp_project):
 def test_load_config_deep_merges_security(tmp_project):
     """User overriding one security flag keeps the others from defaults."""
     config_data = {"security": {"scan_malware": False}}
-    (tmp_project / "teloce-npm.json").write_text(
-        json.dumps(config_data), encoding="utf-8"
-    )
+    (tmp_project / "teloce-npm.json").write_text(json.dumps(config_data), encoding="utf-8")
 
     config = load_config(tmp_project)
 
-    assert config["security"]["scan_malware"] is False          # overridden
-    assert config["security"]["verify_integrity"] is True       # from default
+    assert config["security"]["scan_malware"] is False  # overridden
+    assert config["security"]["verify_integrity"] is True  # from default
     assert config["security"]["block_install_scripts"] is True  # from default
     assert config["security"]["check_vulnerabilities"] is True  # from default
 
@@ -118,9 +115,7 @@ def test_load_config_does_not_mutate_defaults(tmp_project):
     original_packages = list(DEFAULT_CONFIG["packages"])
 
     config_data = {"packages": ["lodash"]}
-    (tmp_project / "teloce-npm.json").write_text(
-        json.dumps(config_data), encoding="utf-8"
-    )
+    (tmp_project / "teloce-npm.json").write_text(json.dumps(config_data), encoding="utf-8")
     load_config(tmp_project)
 
     # DEFAULT_CONFIG must still have the original (empty) packages

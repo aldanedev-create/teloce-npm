@@ -9,9 +9,9 @@ Does NOT test edge cases (that's test_edge_cases.py).
 from pathlib import Path
 
 from teloce_npm.scanner.file_walker import (
-    find_source_files,
     IGNORE_DIRS,
     SOURCE_EXTENSIONS,
+    find_source_files,
 )
 
 

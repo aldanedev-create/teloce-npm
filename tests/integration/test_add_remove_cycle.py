@@ -10,7 +10,8 @@ from teloce_npm.commands.install import InstallCommand
 from teloce_npm.commands.remove import RemoveCommand
 from teloce_npm.registry import RegistryClient
 from teloce_npm.utils.hashing import compute_sha512
-from ._helpers import setup_project, make_fake_tarball, fake_registry_metadata
+
+from ._helpers import fake_registry_metadata, make_fake_tarball, setup_project
 
 
 @pytest.fixture
@@ -25,6 +26,7 @@ def mocked_pipeline(monkeypatch):
 
     def fake_extract(tarball_path, extract_dir):
         from teloce_npm.downloader import extract_tarball
+
         return extract_tarball(tarball_path, extract_dir)
 
     def fake_wrap(extracted, name):
@@ -33,22 +35,14 @@ def mocked_pipeline(monkeypatch):
     def fake_get_metadata(self, name):
         return fake_registry_metadata(name, "4.17.21", integrity)
 
-    monkeypatch.setattr(
-        "teloce_npm.commands.install.download_tarball", fake_download
-    )
-    monkeypatch.setattr(
-        "teloce_npm.commands.install.extract_tarball", fake_extract
-    )
-    monkeypatch.setattr(
-        "teloce_npm.commands.install.wrap_package", fake_wrap
-    )
+    monkeypatch.setattr("teloce_npm.commands.install.download_tarball", fake_download)
+    monkeypatch.setattr("teloce_npm.commands.install.extract_tarball", fake_extract)
+    monkeypatch.setattr("teloce_npm.commands.install.wrap_package", fake_wrap)
     monkeypatch.setattr(
         "teloce_npm.commands.install.check_vulnerabilities",
         lambda n, v: [],
     )
-    monkeypatch.setattr(
-        RegistryClient, "get_package_metadata", fake_get_metadata
-    )
+    monkeypatch.setattr(RegistryClient, "get_package_metadata", fake_get_metadata)
 
 
 def test_add_then_remove_full_cleanup(tmp_path, mocked_pipeline):

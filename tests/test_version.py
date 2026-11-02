@@ -8,13 +8,13 @@ and internally consistent.
 import pytest
 
 from teloce_npm.version import (
-    __version__,
-    __author__,
-    __email__,
-    __license__,
-    __url__,
     VERSION,
     VERSION_INFO,
+    __author__,  # noqa: F401
+    __email__,  # noqa: F401
+    __license__,  # noqa: F401
+    __url__,  # noqa: F401
+    __version__,
 )
 
 
@@ -30,7 +30,7 @@ def test_version_is_semver_like():
 
 
 def test_version_matches_module_constant():
-    assert VERSION == __version__
+    assert __version__ == VERSION
 
 
 def test_version_info_is_tuple_of_ints():

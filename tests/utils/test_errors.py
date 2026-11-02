@@ -5,12 +5,12 @@ Tests for teloce_npm.utils.errors.
 import pytest
 
 from teloce_npm.utils.errors import (
-    TeloceNpmError,
     ConfigError,
-    RegistryError,
-    SecurityError,
     LockfileMismatch,
     PackageNotFoundError,
+    RegistryError,
+    SecurityError,
+    TeloceNpmError,
 )
 
 

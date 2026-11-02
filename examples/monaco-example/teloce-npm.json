@@ -1,0 +1,9 @@
+{
+  "packages": ["monaco-editor"],
+  "bundling": {
+    "mode": "always",
+    "minify": true,
+    "format": "esm",
+    "target": "es2020"
+  }
+}

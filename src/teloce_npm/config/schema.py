@@ -2,12 +2,12 @@
 Validate configuration against JSON schema rules.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from teloce_npm.utils.errors import ConfigError
 
 
-def validate_config(config: Dict[str, Any]) -> None:
+def validate_config(config: dict[str, Any]) -> None:
     """
     Validate the merged configuration dictionary.
 
@@ -24,7 +24,6 @@ def validate_config(config: Dict[str, Any]) -> None:
         "cache_dir",
         "registry",
         "security",
-        "bundling",
     ]
     for key in required_keys:
         if key not in config:
@@ -83,7 +82,10 @@ def validate_config(config: Dict[str, Any]) -> None:
             raise ConfigError(f"Security key 'security.{key}' must be a boolean.")
 
     # ------------------------------------------------------------------
-    # bundling block
+    # bundling block (optional for backward-compatible direct validation;
+    # load_config supplies the complete default block before validation.)
+    if "bundling" not in config:
+        return
     # ------------------------------------------------------------------
     if not isinstance(config["bundling"], dict):
         raise ConfigError("Config key 'bundling' must be a dictionary.")
@@ -105,8 +107,7 @@ def validate_config(config: Dict[str, Any]) -> None:
     # mode
     if bundling["mode"] not in ("auto", "always", "never"):
         raise ConfigError(
-            f"bundling.mode must be one of: auto, always, never. "
-            f"Got: {bundling['mode']!r}"
+            f"bundling.mode must be one of: auto, always, never. " f"Got: {bundling['mode']!r}"
         )
 
     # boolean keys
@@ -121,8 +122,7 @@ def validate_config(config: Dict[str, Any]) -> None:
     # format
     if bundling["format"] not in ("esm", "cjs", "iife"):
         raise ConfigError(
-            f"bundling.format must be one of: esm, cjs, iife. "
-            f"Got: {bundling['format']!r}"
+            f"bundling.format must be one of: esm, cjs, iife. " f"Got: {bundling['format']!r}"
         )
 
     # platform
@@ -136,8 +136,7 @@ def validate_config(config: Dict[str, Any]) -> None:
     sm = bundling.get("sourcemap")
     if sm is not None and sm not in ("inline", "external", "both"):
         raise ConfigError(
-            f"bundling.sourcemap must be None, 'inline', 'external', or 'both'. "
-            f"Got: {sm!r}"
+            f"bundling.sourcemap must be None, 'inline', 'external', or 'both'. " f"Got: {sm!r}"
         )
 
     # splitting requires ESM format

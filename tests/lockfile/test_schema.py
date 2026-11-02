@@ -9,11 +9,11 @@ Does NOT test LockfileManager (that's test_manager.py).
 import pytest
 
 from teloce_npm.lockfile.schema import (
+    LOCKFILE_VERSION,
     empty_lockfile,
+    get_package_versions,
     make_package_entry,
     validate_lockfile,
-    get_package_versions,
-    LOCKFILE_VERSION,
 )
 
 
@@ -55,8 +55,16 @@ def test_make_package_entry_includes_all_keys():
         size=1024,
     )
 
-    for key in ("version", "resolved", "integrity", "dependencies",
-                "wrapped", "size", "scanned_at", "scan_result"):
+    for key in (
+        "version",
+        "resolved",
+        "integrity",
+        "dependencies",
+        "wrapped",
+        "size",
+        "scanned_at",
+        "scan_result",
+    ):
         assert key in entry
 
 
@@ -107,10 +115,12 @@ def test_validate_missing_packages_raises():
 
 def test_validate_non_dict_packages_raises():
     with pytest.raises(Exception, match="packages"):
-        validate_lockfile({
-            "lockfile_version": LOCKFILE_VERSION,
-            "packages": "not-a-dict",
-        })
+        validate_lockfile(
+            {
+                "lockfile_version": LOCKFILE_VERSION,
+                "packages": "not-a-dict",
+            }
+        )
 
 
 def test_validate_entry_missing_required_key_raises():
@@ -169,9 +179,7 @@ def test_get_package_versions_returns_name_version_map():
     lock["packages"]["lodash"] = make_package_entry(
         "4.17.21", "https://x", "sha512-a", "lodash.js", 1
     )
-    lock["packages"]["dayjs"] = make_package_entry(
-        "1.11.0", "https://y", "sha512-b", "dayjs.js", 2
-    )
+    lock["packages"]["dayjs"] = make_package_entry("1.11.0", "https://y", "sha512-b", "dayjs.js", 2)
 
     assert get_package_versions(lock) == {
         "lodash": "4.17.21",

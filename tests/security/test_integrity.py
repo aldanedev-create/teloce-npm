@@ -8,8 +8,8 @@ SHA-512 math is tested separately in tests/utils/test_hashing.py.
 import pytest
 
 from teloce_npm.security.integrity import IntegrityVerifier
-from teloce_npm.utils.hashing import compute_sha512
 from teloce_npm.utils.errors import SecurityError
+from teloce_npm.utils.hashing import compute_sha512
 
 
 def test_verify_tarball_matching_hash(tmp_path):

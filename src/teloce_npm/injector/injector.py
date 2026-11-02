@@ -4,16 +4,18 @@ Core marker-based HTML injection logic.
 
 import re
 from pathlib import Path
+
 from teloce_npm.utils.file_io import read_file, write_file_atomic
 from teloce_npm.utils.logging import logger
 
 START_MARKER = "<!-- TELOCE-NPM-START -->"
 END_MARKER = "<!-- TELOCE-NPM-END -->"
 
+
 def inject_scripts(entry_html_path: Path, scripts_html: str) -> None:
     """
     Inject the script tags into the entry HTML file safely.
-    
+
     Args:
         entry_html_path: The path to the entry HTML file.
         scripts_html: The string of <script> tags to inject.
@@ -45,7 +47,7 @@ def inject_scripts(entry_html_path: Path, scripts_html: str) -> None:
 def remove_scripts(entry_html_path: Path) -> None:
     """
     Remove previously injected script tags from the entry HTML file.
-    
+
     Args:
         entry_html_path: The path to the entry HTML file.
     """
@@ -64,6 +66,6 @@ def _remove_block(content: str) -> str:
     """
     Remove the marker block from the content using regex.
     """
-    pattern = f"{re.escape(START_MARKER)}.*?{re.escape(END_MARKER)}"
+    pattern = f"\\n?{re.escape(START_MARKER)}.*?{re.escape(END_MARKER)}\\n?"
     # Use DOTALL to match across multiple lines
     return re.sub(pattern, "", content, flags=re.DOTALL)

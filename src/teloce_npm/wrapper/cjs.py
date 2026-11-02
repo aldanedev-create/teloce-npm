@@ -2,11 +2,10 @@
 Wrap CommonJS (CJS) packages for the browser using Tree-sitter.
 """
 
-from pathlib import Path
-
-from .base import BaseWrapper
-from .ast_parser import parse_source, find_nodes, replace_node, extract_requires
 from teloce_npm.utils.logging import logger
+
+from .ast_parser import extract_requires, parse_source, replace_node
+from .base import BaseWrapper
 
 
 class CjsWrapper(BaseWrapper):
@@ -14,19 +13,19 @@ class CjsWrapper(BaseWrapper):
     def wrap(self) -> str:
         entry_path = self._find_entry_file()
         logger.debug(f"Wrapping CommonJS entry: {entry_path}")
-        
+
         source_code = entry_path.read_text(encoding="utf-8")
-        
+
         # 1. Parse the source code
         tree = parse_source(source_code)
 
         # 2. Extract all require() calls
         requires = extract_requires(tree)
-        
+
         # 3. Replace require() calls with window lookups
         for req in sorted(requires, key=lambda x: x["node"].start_byte, reverse=True):
             dep_name = req["source"]
-            
+
             # Skip relative requires (the browser can't resolve them)
             if dep_name.startswith(".") or dep_name.startswith("/"):
                 logger.warning(
@@ -34,9 +33,11 @@ class CjsWrapper(BaseWrapper):
                 )
                 replacement = "undefined"
             else:
-                safe_name = dep_name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
+                safe_name = (
+                    dep_name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
+                )
                 replacement = f"window.{safe_name}"
-            
+
             source_code = replace_node(source_code, req["node"], replacement)
 
         window_name = self._window_name()

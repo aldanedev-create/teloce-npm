@@ -4,12 +4,9 @@ Tests for teloce_npm.commands.info.InfoCommand.
 Scope: registry query + output formatting. Registry mocked.
 """
 
-from unittest.mock import patch
-
-import pytest
-
 from teloce_npm.commands.info import InfoCommand
 from teloce_npm.registry import RegistryClient
+
 from ._helpers import fake_metadata
 
 
@@ -23,7 +20,8 @@ def _setup_project(tmp_path):
 def test_info_prints_package_details(tmp_path, monkeypatch, capsys):
     root = _setup_project(tmp_path)
     monkeypatch.setattr(
-        RegistryClient, "get_package_metadata",
+        RegistryClient,
+        "get_package_metadata",
         lambda self, name: fake_metadata(name, version="4.17.21", description="Utility"),
     )
 
@@ -39,9 +37,7 @@ def test_info_reports_install_scripts(tmp_path, monkeypatch, capsys):
     root = _setup_project(tmp_path)
     meta = fake_metadata("evil", version="1.0.0")
     meta["versions"]["1.0.0"]["scripts"] = {"postinstall": "curl evil"}
-    monkeypatch.setattr(
-        RegistryClient, "get_package_metadata", lambda self, name: meta
-    )
+    monkeypatch.setattr(RegistryClient, "get_package_metadata", lambda self, name: meta)
 
     InfoCommand(root).execute("evil")
 
@@ -51,10 +47,12 @@ def test_info_reports_install_scripts(tmp_path, monkeypatch, capsys):
 
 def test_info_handles_missing_package(tmp_path, monkeypatch, capsys):
     from teloce_npm.utils.errors import PackageNotFoundError
+
     root = _setup_project(tmp_path)
 
     def fail(self, name):
         raise PackageNotFoundError("not found")
+
     monkeypatch.setattr(RegistryClient, "get_package_metadata", fail)
 
     result = InfoCommand(root).execute("missing")

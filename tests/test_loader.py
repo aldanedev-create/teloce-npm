@@ -54,6 +54,7 @@ def test_dispatches_error_event():
 
 def test_generated_js_is_syntactically_valid():
     from teloce_npm.wrapper.ast_parser import parse_source
+
     output = generate_loader_js()
     tree = parse_source(output)
     assert tree.root_node is not None

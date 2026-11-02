@@ -8,10 +8,9 @@ pipeline (download/extract/wrap) is mocked via `_install_package`.
 
 import json
 
-import pytest
-
 from teloce_npm.commands.install import InstallCommand
-from ._helpers import setup_project, fake_install
+
+from ._helpers import fake_install, setup_project
 
 
 # ---------------------------------------------------------------------------
@@ -147,3 +146,24 @@ def test_install_saves_lockfile_to_disk(tmp_path, monkeypatch):
     assert (root / "teloce-npm.lock").exists()
     lock = json.loads((root / "teloce-npm.lock").read_text())
     assert "lodash" in lock["packages"]
+
+
+def test_lockfile_preserves_bundled_relative_output_path(tmp_path):
+    root = setup_project(tmp_path)
+    command = InstallCommand(root)
+    command._setup()
+
+    command._update_lockfile(
+        "monaco-editor",
+        "1.0.0",
+        {
+            "tarball_url": "https://registry.npmjs.org/monaco-editor/-/monaco-editor-1.0.0.tgz",
+            "integrity": "sha512-test",
+        },
+        "export {}",
+        wrapped_filename="monaco_editor/monaco_editor.js",
+    )
+
+    assert command.lockfile.get_package("monaco-editor")["wrapped"] == (
+        "monaco_editor/monaco_editor.js"
+    )

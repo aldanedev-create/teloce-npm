@@ -6,8 +6,6 @@ Scope: HTTP query + output formatting. HTTP mocked.
 
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from teloce_npm.commands.search import SearchCommand
 
 
@@ -17,6 +15,7 @@ def _mock_response(data, status=200):
     resp.json.return_value = data
     if status >= 400:
         from requests.exceptions import HTTPError
+
         resp.raise_for_status.side_effect = HTTPError()
     return resp
 

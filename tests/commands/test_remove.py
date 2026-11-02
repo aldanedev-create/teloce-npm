@@ -19,22 +19,25 @@ def _setup_installed(tmp_path, packages=("lodash",)):
         json.dumps({"packages": list(packages)}), encoding="utf-8"
     )
     (tmp_path / "teloce-npm.lock").write_text(
-        json.dumps({
-            "lockfile_version": "1.0.0",
-            "generated_at": "2025-01-01T00:00:00Z",
-            "packages": {
-                p: {
-                    "version": "1.0.0",
-                    "resolved": f"https://fake/{p}.tgz",
-                    "integrity": f"sha512-{p}",
-                    "dependencies": {},
-                    "wrapped": f"{p}.js",
-                    "size": 100,
-                    "scanned_at": "2025-01-01T00:00:00Z",
-                    "scan_result": "clean",
-                } for p in packages
-            },
-        }),
+        json.dumps(
+            {
+                "lockfile_version": "1.0.0",
+                "generated_at": "2025-01-01T00:00:00Z",
+                "packages": {
+                    p: {
+                        "version": "1.0.0",
+                        "resolved": f"https://fake/{p}.tgz",
+                        "integrity": f"sha512-{p}",
+                        "dependencies": {},
+                        "wrapped": f"{p}.js",
+                        "size": 100,
+                        "scanned_at": "2025-01-01T00:00:00Z",
+                        "scan_result": "clean",
+                    }
+                    for p in packages
+                },
+            }
+        ),
         encoding="utf-8",
     )
     out = tmp_path / "dist" / "static" / "teloce-npm"

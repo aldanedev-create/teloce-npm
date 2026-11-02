@@ -9,9 +9,9 @@ import json
 import pytest
 
 from teloce_npm.security.install_policy import (
-    check_install_scripts,
     ALLOWED_SCRIPTS,
     BLOCKED_SCRIPTS,
+    check_install_scripts,
 )
 from teloce_npm.utils.errors import SecurityError
 
@@ -82,5 +82,5 @@ def test_malformed_package_json_raises(tmp_path):
     package_dir.mkdir()
     (package_dir / "package.json").write_text("{ not json", encoding="utf-8")
 
-    with pytest.raises(SecurityError, match="Invalid package.json"):
+    with pytest.raises(SecurityError, match=r"Invalid package\.json"):
         check_install_scripts(package_dir, "test-pkg")

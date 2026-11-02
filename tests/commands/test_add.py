@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from teloce_npm.commands.add import AddCommand
 from teloce_npm.commands.install import InstallCommand
+
 from ._helpers import setup_project
 
 

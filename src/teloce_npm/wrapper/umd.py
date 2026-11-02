@@ -2,17 +2,17 @@
 Wrap UMD (Universal Module Definition) packages for the browser.
 """
 
-from pathlib import Path
+from teloce_npm.utils.logging import logger
 
 from .base import BaseWrapper
-from teloce_npm.utils.logging import logger
+
 
 class UmdWrapper(BaseWrapper):
 
     def wrap(self) -> str:
         entry_path = self._find_entry_file()
         logger.debug(f"Wrapping UMD entry: {entry_path}")
-        
+
         source_code = entry_path.read_text(encoding="utf-8")
 
         window_name = self._window_name()

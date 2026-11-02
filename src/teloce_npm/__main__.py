@@ -193,6 +193,7 @@ def main() -> int:
     try:
         if args.command == "install":
             from .commands.install import InstallCommand
+
             return InstallCommand().execute(
                 packages=args.packages,
                 production=args.production,
@@ -203,6 +204,7 @@ def main() -> int:
         elif args.command == "add":
             # `add` is an alias for `install <package>`
             from .commands.install import InstallCommand
+
             return InstallCommand().execute(
                 packages=[args.package],
                 verbose=args.verbose,
@@ -211,30 +213,37 @@ def main() -> int:
 
         elif args.command == "remove":
             from .commands.remove import RemoveCommand
+
             return RemoveCommand().execute(package=args.package)
 
         elif args.command == "update":
             from .commands.update import UpdateCommand
+
             return UpdateCommand().execute(package=args.package)
 
         elif args.command == "list":
             from .commands.list import ListCommand
+
             return ListCommand().execute()
 
         elif args.command == "search":
             from .commands.search import SearchCommand
+
             return SearchCommand().execute(query=args.query)
 
         elif args.command == "info":
             from .commands.info import InfoCommand
+
             return InfoCommand().execute(package=args.package)
 
         elif args.command == "clean":
             from .commands.clean import CleanCommand
+
             return CleanCommand().execute()
 
         elif args.command == "doctor":
             from .commands.doctor import DoctorCommand
+
             return DoctorCommand().execute()
 
         else:

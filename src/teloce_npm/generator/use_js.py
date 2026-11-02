@@ -4,15 +4,14 @@ Generate `use.js` — the window.use() runtime.
 
 from pathlib import Path
 from string import Template
-from typing import Any, Dict, List
+from typing import Any
 
 from teloce_npm.utils.logging import logger
-
 
 TEMPLATE_PATH = Path(__file__).parent / "templates" / "use.js.tmpl"
 
 
-def generate_use_js(packages: List[Dict[str, Any]]) -> str:
+def generate_use_js(packages: list[dict[str, Any]]) -> str:
     """
     Generate the contents of `use.js`.
 
@@ -37,7 +36,7 @@ def generate_use_js(packages: List[Dict[str, Any]]) -> str:
     return template.substitute(available_packages=available_packages)
 
 
-def write_use_js(packages: List[Dict[str, Any]], output_dir: Path) -> Path:
+def write_use_js(packages: list[dict[str, Any]], output_dir: Path) -> Path:
     """
     Generate and write `use.js` to the output directory.
 

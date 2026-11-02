@@ -2,13 +2,15 @@
 `teloce-npm update [package]` — update packages to the latest allowed version.
 """
 
+from typing import Optional
+
 from teloce_npm.commands import BaseCommand
 from teloce_npm.commands.install import InstallCommand
 
 
 class UpdateCommand(BaseCommand):
 
-    def execute(self, package: str = None) -> int:
+    def execute(self, package: Optional[str] = None) -> int:
         self._setup()
         self.adapter.prepare()
 
@@ -29,6 +31,7 @@ class UpdateCommand(BaseCommand):
             try:
                 metadata = self.registry.get_package_metadata(name)
                 from teloce_npm.registry import resolve_version
+
                 latest = resolve_version(metadata, "latest")
 
                 if latest == locked_version:
@@ -43,6 +46,7 @@ class UpdateCommand(BaseCommand):
 
         # Regenerate + inject
         from teloce_npm.generator import generate_all
+
         generate_all(
             self._get_package_list(),
             self.adapter.output_dir,

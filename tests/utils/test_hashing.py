@@ -6,15 +6,14 @@ hardcoded digests so the tests stay correct across Python versions.
 """
 
 import pytest
-from pathlib import Path
 
-from teloce_npm.utils.hashing import (
-    compute_sha512,
-    compute_file_sha512,
-    verify_integrity,
-    verify_file_integrity,
-)
 from teloce_npm.utils.errors import SecurityError
+from teloce_npm.utils.hashing import (
+    compute_file_sha512,
+    compute_sha512,
+    verify_file_integrity,
+    verify_integrity,
+)
 
 
 # ---------------------------------------------------------------------------

@@ -13,9 +13,7 @@ def setup_project(tmp_path: Path, packages=None) -> Path:
     )
     (tmp_path / "static" / "js").mkdir(parents=True, exist_ok=True)
     config = {"packages": packages or []}
-    (tmp_path / "teloce-npm.json").write_text(
-        json.dumps(config), encoding="utf-8"
-    )
+    (tmp_path / "teloce-npm.json").write_text(json.dumps(config), encoding="utf-8")
     return tmp_path
 
 

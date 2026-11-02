@@ -4,17 +4,16 @@ Generate `loader.js` — the async package loader.
 
 from pathlib import Path
 from string import Template
-from typing import Any, Dict, List
+from typing import Optional
 
 from teloce_npm.utils.logging import logger
-
 
 TEMPLATE_PATH = Path(__file__).parent / "templates" / "loader.js.tmpl"
 
 
 def generate_loader_js(
     base_path: str = "/static/teloce-npm",
-    manifest_url: str = None,
+    manifest_url: Optional[str] = None,
 ) -> str:
     """
     Generate the contents of `loader.js`.
@@ -46,7 +45,7 @@ def generate_loader_js(
 def write_loader_js(
     output_dir: Path,
     base_path: str = "/static/teloce-npm",
-    manifest_url: str = None,
+    manifest_url: Optional[str] = None,
 ) -> Path:
     """
     Generate and write `loader.js` to the output directory.

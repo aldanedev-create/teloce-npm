@@ -7,15 +7,16 @@ Uses real LockfileManager and CacheManager in tmp_path.
 
 import pytest
 
+from teloce_npm.cache.manager import CacheManager
 from teloce_npm.lockfile.manager import LockfileManager
 from teloce_npm.lockfile.verifier import LockfileVerifier
-from teloce_npm.cache.manager import CacheManager
-from teloce_npm.utils.hashing import compute_sha512
 from teloce_npm.utils.errors import LockfileMismatch
+from teloce_npm.utils.hashing import compute_sha512
 
 
-def _setup_cached_package(cache, tmp_path, name, version, tarball_content,
-                          lockfile_integrity, wrapped="code"):
+def _setup_cached_package(
+    cache, tmp_path, name, version, tarball_content, lockfile_integrity, wrapped="code"
+):
     """Populate the cache with a package + tarball."""
     src = tmp_path / f"src_{name}_{version}"
     src.mkdir()
@@ -59,10 +60,8 @@ def test_verify_against_cache_all_ok(setup):
 # verify_against_cache — missing packages
 # ---------------------------------------------------------------------------
 def test_verify_against_cache_detects_missing(setup):
-    lockfile, cache, verifier, tmp = setup
-    lockfile.add_package(
-        "lodash", "4.17.21", "https://x", "sha512-abc", "lodash.js", 100
-    )
+    lockfile, _cache, verifier, _tmp = setup
+    lockfile.add_package("lodash", "4.17.21", "https://x", "sha512-abc", "lodash.js", 100)
 
     result = verifier.verify_against_cache()
     assert result["ok"] is False
@@ -92,7 +91,7 @@ def test_verify_against_cache_detects_corruption(setup):
 # verify_against_cache — extra packages (in cache, not in lockfile)
 # ---------------------------------------------------------------------------
 def test_verify_against_cache_detects_extra(setup):
-    lockfile, cache, verifier, tmp = setup
+    _lockfile, cache, verifier, tmp = setup
     content = b"x"
     real = compute_sha512(content)
 
@@ -107,7 +106,7 @@ def test_verify_against_cache_detects_extra(setup):
 # verify_against_cache — empty lockfile
 # ---------------------------------------------------------------------------
 def test_verify_against_cache_empty(setup):
-    lockfile, cache, verifier, tmp = setup
+    _lockfile, _cache, verifier, _tmp = setup
     result = verifier.verify_against_cache()
     assert result["ok"] is True
 
@@ -116,7 +115,7 @@ def test_verify_against_cache_empty(setup):
 # verify_versions
 # ---------------------------------------------------------------------------
 def test_verify_versions_matching(setup):
-    lockfile, cache, verifier, tmp = setup
+    lockfile, _cache, verifier, _tmp = setup
     lockfile.add_package("lodash", "4.17.21", "https://x", "sha512-a", "lodash.js", 1)
 
     # Should not raise
@@ -124,13 +123,13 @@ def test_verify_versions_matching(setup):
 
 
 def test_verify_versions_missing_package_raises(setup):
-    lockfile, cache, verifier, tmp = setup
+    _lockfile, _cache, verifier, _tmp = setup
     with pytest.raises(LockfileMismatch, match="missing from lockfile"):
         verifier.verify_versions({"lodash": "4.17.21"})
 
 
 def test_verify_versions_version_mismatch_raises(setup):
-    lockfile, cache, verifier, tmp = setup
+    lockfile, _cache, verifier, _tmp = setup
     lockfile.add_package("lodash", "4.17.21", "https://x", "sha512-a", "lodash.js", 1)
 
     with pytest.raises(LockfileMismatch, match="does not match"):
@@ -138,7 +137,7 @@ def test_verify_versions_version_mismatch_raises(setup):
 
 
 def test_verify_versions_empty_expected_passes(setup):
-    lockfile, cache, verifier, tmp = setup
+    _lockfile, _cache, verifier, _tmp = setup
     verifier.verify_versions({})  # should not raise
 
 
@@ -146,7 +145,7 @@ def test_verify_versions_empty_expected_passes(setup):
 # is_valid()
 # ---------------------------------------------------------------------------
 def test_is_valid_false_when_lockfile_missing(setup):
-    lockfile, cache, verifier, tmp = setup
+    _lockfile, _cache, verifier, _tmp = setup
     assert verifier.is_valid() is False
 
 
@@ -166,7 +165,7 @@ def test_is_valid_true_when_everything_ok(setup):
 # report()
 # ---------------------------------------------------------------------------
 def test_report_when_lockfile_missing(setup):
-    lockfile, cache, verifier, tmp = setup
+    _lockfile, _cache, verifier, _tmp = setup
     report = verifier.report()
     assert "NOT FOUND" in report
 
@@ -186,7 +185,7 @@ def test_report_when_ok(setup):
 
 
 def test_report_when_missing_package(setup):
-    lockfile, cache, verifier, tmp = setup
+    lockfile, _cache, verifier, _tmp = setup
     lockfile.add_package("lodash", "4.17.21", "https://x", "sha512-a", "lodash.js", 1)
     lockfile.save()
 

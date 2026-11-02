@@ -4,31 +4,31 @@ Extract Use declarations from .vel and .html files.
 
 import re
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any
+
 from teloce_npm.utils.file_io import read_file
 from teloce_npm.utils.logging import logger
+
 from .file_walker import find_source_files
 
-# Regex to match lines like: 
+# Regex to match lines like:
 # Use apple from teloce-npm
 # Use @scope/package from teloce-npm
 # Use lodash@^4.17.0 from teloce-npm (optional versioning in the future)
-USE_PATTERN = re.compile(
-    r"^\s*Use\s+([@a-zA-Z0-9_\-/\.]+)\s+from\s+teloce-npm\s*$", 
-    re.IGNORECASE
-)
+USE_PATTERN = re.compile(r"^\s*Use\s+([@a-zA-Z0-9_\-/\.]+)\s+from\s+teloce-npm\s*$", re.IGNORECASE)
 
-def scan_file(file_path: Path) -> List[Dict[str, Any]]:
+
+def scan_file(file_path: Path) -> list[dict[str, Any]]:
     """
     Scan a single file for Use declarations.
-    
+
     Args:
         file_path: Path to the .vel or .html file.
-        
+
     Returns:
         A list of dictionaries containing package name, file, and line number.
     """
-    uses = []
+    uses: list[dict[str, Any]] = []
     try:
         content = read_file(file_path)
     except Exception as e:
@@ -39,27 +39,24 @@ def scan_file(file_path: Path) -> List[Dict[str, Any]]:
         match = USE_PATTERN.match(line)
         if match:
             package_name = match.group(1)
-            uses.append({
-                "package": package_name,
-                "file": str(file_path),
-                "line": line_num
-            })
-            
+            uses.append({"package": package_name, "file": str(file_path), "line": line_num})
+
     return uses
 
-def scan_project(root_dir: Path) -> List[Dict[str, Any]]:
+
+def scan_project(root_dir: Path) -> list[dict[str, Any]]:
     """
     Scan the entire project for Use declarations.
-    
+
     Args:
         root_dir: The root directory of the project.
-        
+
     Returns:
         A flat list of all Use declarations found.
     """
     all_uses = []
     source_files = find_source_files(root_dir)
-    
+
     for file_path in source_files:
         # Skip the entry HTML file if it somehow contains Use declarations (it shouldn't)
         # We can scan it anyway; if it has no 'Use' lines, it will just return an empty list.
@@ -67,7 +64,7 @@ def scan_project(root_dir: Path) -> List[Dict[str, Any]]:
         all_uses.extend(uses)
 
     # Deduplicate while preserving the first occurrence for reporting
-    # (The install command will handle unique package extraction later, 
+    # (The install command will handle unique package extraction later,
     # but this keeps the output clean for logging).
     seen = set()
     unique_uses = []
