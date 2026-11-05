@@ -1,0 +1,17 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-04T11:54:43.164915+00:00",
+  "packages": {
+    "dayjs": {
+      "version": "1.11.23",
+      "resolved": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.23.tgz",
+      "integrity": "sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==",
+      "dependencies": {},
+      "wrapped": "dayjs.js",
+      "size": 7654,
+      "workers": {},
+      "scanned_at": "2026-11-04T11:54:43.160959+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

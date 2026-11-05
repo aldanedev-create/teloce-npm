@@ -1,0 +1,9 @@
+{
+  "build": {
+    "out_dir": "dist",
+    "static_dir": "static",
+    "clean": true,
+    "shared_runtime": true,
+    "hash_assets": false
+  }
+}

@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional, cast
 
+from teloce_npm.security.validation import validate_package_name, validate_version
 from teloce_npm.utils.file_io import ensure_dir, read_file, write_file_atomic
 from teloce_npm.utils.logging import logger
 
@@ -36,6 +37,8 @@ class CacheStorage:
     # ------------------------------------------------------------------
     def package_dir(self, package_name: str, version: str) -> Path:
         """Return the directory for a specific package version."""
+        validate_package_name(package_name)
+        validate_version(version)
         safe_name = package_name.replace("/", "__").replace("@", "_at_")
         return self.cache_dir / f"{safe_name}@{version}"
 

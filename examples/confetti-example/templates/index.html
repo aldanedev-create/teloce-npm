@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:,">
+    <title>Confetti .vel example</title>
+  
+
+<!-- TELOCE-NPM-START -->
+<script src="/static/teloce-npm/loader.js" defer></script>
+<script src="/static/teloce-npm/use.js" defer></script>
+<!-- TELOCE-NPM-END -->
+</head>
+  <body>
+    <div id="app"></div>
+    <script type="module">
+      const start = async () => {
+        const { mount } = await import("/static/js/App.js");
+        mount("#app");
+      };
+      window.addEventListener("teloce-npm-ready", start, { once: true });
+    </script>
+  </body>
+</html>

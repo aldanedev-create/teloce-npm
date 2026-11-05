@@ -1,0 +1,66 @@
+Use sortablejs from teloce-npm
+
+<script>
+let sortable = null;
+
+export default {
+  data() { return { items: ['Write the loader', 'Fix the wrapper', 'Ship the examples', 'Celebrate'] }; },
+  mounted() {
+    const mod = use('sortablejs');
+    const Sortable = mod.default || mod;
+    sortable = Sortable.create(document.getElementById('list'), {
+      animation: 150,
+      onEnd: () => {
+        this.items = Array.from(document.querySelectorAll('#list li')).map((el) => el.textContent.trim());
+      }
+    });
+  },
+  beforeUnmount() {
+    if (sortable) sortable.destroy();
+    sortable = null;
+  }
+};
+</script>
+
+<template>
+  <main class="shell">
+    <header>
+      <span class="eyebrow">Teloce-NPM example</span>
+      <h1>Drag and drop with SortableJS</h1>
+      <p>Drag the rows. The order below updates from the DOM.</p>
+    </header>
+    <section class="card">
+      <ul id="list" class="list">
+        <li class="item">Write the loader</li>
+        <li class="item">Fix the wrapper</li>
+        <li class="item">Ship the examples</li>
+        <li class="item">Celebrate</li>
+      </ul>
+      <p id="order" class="mono">{{ items.join(' > ') }}</p>
+    </section>
+  </main>
+</template>
+
+<style>
+body { margin: 0; background: #10141c; color: #e7edf7; font-family: system-ui, sans-serif; }
+.shell { min-height: 100vh; box-sizing: border-box; padding: 3rem; max-width: 1000px; margin: 0 auto; }
+.eyebrow { color: #72d6c9; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: .5rem 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { margin: 0 0 .75rem; font-size: 1rem; color: #72d6c9; font-weight: 600; }
+p { color: #9da9ba; }
+code, .mono { font-family: ui-monospace, monospace; }
+.card { background: #171d28; border: 1px solid #2d3848; border-radius: 8px; padding: 1.25rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.row { display: flex; align-items: center; gap: .75rem; margin-top: .75rem; flex-wrap: wrap; }
+label { color: #9da9ba; font-size: .85rem; }
+textarea, input, select { background: #10141c; color: inherit; border: 1px solid #2d3848; border-radius: 6px; padding: .5rem; font: inherit; }
+textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: ui-monospace, monospace; }
+button { background: #72d6c9; color: #10141c; border: 0; border-radius: 6px; padding: .5rem .9rem; font-weight: 600; cursor: pointer; }
+ul { margin: 0; padding-left: 1.1rem; }
+li { margin: .25rem 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #2d3848; }
+th { color: #72d6c9; font-weight: 600; }
+.list { list-style: none; padding: 0; }
+.item { background: #10141c; border: 1px solid #2d3848; border-radius: 6px; padding: .75rem 1rem; margin: .4rem 0; cursor: grab; }
+</style>

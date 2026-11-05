@@ -1,0 +1,12 @@
+{
+  "packages": [
+    "lodash"
+  ],
+  "security": {
+    "allow": {
+      "lodash": [
+        "dynamic_function"
+      ]
+    }
+  }
+}

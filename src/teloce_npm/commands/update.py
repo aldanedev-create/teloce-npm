@@ -39,7 +39,7 @@ class UpdateCommand(BaseCommand):
                     continue
 
                 print(f"  [UPDATE] {name}: {locked_version} -> {latest}")
-                installer._install_package(name, f"={latest}", no_verify=False)
+                installer._install_package(name, f"={latest}", no_verify=False, ignore_lock=True)
                 updated += 1
             except Exception as e:
                 print(f"  [ERROR] {name}: {e}")

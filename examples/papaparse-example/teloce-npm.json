@@ -1,0 +1,12 @@
+{
+  "packages": [
+    "papaparse"
+  ],
+  "security": {
+    "allow": {
+      "papaparse": [
+        "dangerous_module"
+      ]
+    }
+  }
+}

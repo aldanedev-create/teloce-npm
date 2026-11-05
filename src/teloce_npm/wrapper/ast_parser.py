@@ -5,6 +5,7 @@ This module provides a shared parser instance and utility functions
 for querying and transforming JavaScript source code.
 """
 
+import functools
 from typing import Any
 
 # We assume tree_sitter and tree_sitter_javascript are installed
@@ -29,6 +30,29 @@ def parse_source(source_code: str) -> tree_sitter.Tree:
     return PARSER.parse(bytes(source_code, "utf-8"))
 
 
+@functools.lru_cache(maxsize=64)
+def _compile_query(query_string: str) -> Any:
+    """Compile a query once; compiling is far more expensive than running it."""
+    legacy_query = getattr(JS_LANGUAGE, "query", None)
+    if legacy_query is not None:
+        return legacy_query(query_string)
+    return tree_sitter.Query(JS_LANGUAGE, query_string)
+
+
+def query_captures(tree: tree_sitter.Tree, query_string: str) -> dict[str, list[tree_sitter.Node]]:
+    """
+    Run a Tree-sitter query in a single pass over the AST.
+
+    Returns:
+        A dict of capture name -> matching nodes. Several patterns can share one
+        query string, which walks the tree once instead of once per pattern.
+    """
+    query = _compile_query(query_string)
+    if getattr(JS_LANGUAGE, "query", None) is not None:
+        return dict(query.captures(tree.root_node))
+    return dict(tree_sitter.QueryCursor(query).captures(tree.root_node))
+
+
 def find_nodes(tree: tree_sitter.Tree, query_string: str) -> list[tree_sitter.Node]:
     """
     Run a Tree-sitter query against the AST and return matching nodes.
@@ -40,17 +64,8 @@ def find_nodes(tree: tree_sitter.Tree, query_string: str) -> list[tree_sitter.No
     Returns:
         A list of matching nodes.
     """
-    legacy_query = getattr(JS_LANGUAGE, "query", None)
-    if legacy_query is not None:
-        captures = legacy_query(query_string).captures(tree.root_node)
-    else:
-        query = tree_sitter.Query(JS_LANGUAGE, query_string)
-        captures = tree_sitter.QueryCursor(query).captures(tree.root_node)
-
-    # captures is a dict of capture_name -> list of nodes
-    # We flatten to a single list of nodes
-    all_nodes = []
-    for nodes in captures.values():
+    all_nodes: list[tree_sitter.Node] = []
+    for nodes in query_captures(tree, query_string).values():
         all_nodes.extend(nodes)
     return all_nodes
 
@@ -154,6 +169,11 @@ def extract_requires(tree: tree_sitter.Tree) -> list[dict[str, Any]]:
             while call is not None and call.type != "call_expression":
                 call = call.parent
             if call is None or node.text is None:
+                continue
+            # The query matches any `identifier("string")` call; only real
+            # require() calls are module imports (not e.g. Function('return this')).
+            callee = call.child_by_field_name("function")
+            if callee is None or callee.text != b"require":
                 continue
             requires.append(
                 {

@@ -17,6 +17,7 @@ Limitations (documented, not solved by this module):
 """
 
 import json
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -85,6 +86,7 @@ class MinifyJSBundler:
         extracted_dir: Path,
         package_name: str,
         output_dir: Path,
+        dependency_dirs: Optional[dict[str, Path]] = None,
     ) -> dict[str, object]:
         """
         Bundle an extracted npm package into a browser-ready file.
@@ -94,6 +96,9 @@ class MinifyJSBundler:
             package_name: The npm package name (e.g., "lodash").
             output_dir: Where to write the bundled output (typically the
                         adapter's output_dir).
+            dependency_dirs: Optional {dependency name: extracted directory} map.
+                        Each is placed under `node_modules/<name>` next to the
+                        package so imports of its npm dependencies resolve.
 
         Returns:
             A dict with:
@@ -108,6 +113,8 @@ class MinifyJSBundler:
         """
         with tempfile.TemporaryDirectory(prefix="teloce-npm-assets-") as temp_dir:
             prepared_dir = prepare_package(extracted_dir, Path(temp_dir))
+            for dep_name, dep_dir in (dependency_dirs or {}).items():
+                shutil.copytree(dep_dir, prepared_dir / "node_modules" / dep_name, dirs_exist_ok=True)
             return self._bundle_prepared_package(prepared_dir, package_name, output_dir)
 
     def _bundle_prepared_package(

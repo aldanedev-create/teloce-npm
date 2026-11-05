@@ -1,0 +1,20 @@
+{
+  "packages": [
+    "three"
+  ],
+  "bundling": {
+    "mode": "always",
+    "minify": true,
+    "format": "esm",
+    "target": "es2020"
+  },
+  "security": {
+    "allow": {
+      "three": [
+        "eval_usage",
+        "dangerous_module",
+        "dynamic_function"
+      ]
+    }
+  }
+}

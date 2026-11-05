@@ -48,6 +48,11 @@ class LockfileManager:
 
         try:
             raw = read_file(self.path)
+            if not raw.strip():
+                # An empty file (e.g. a placeholder) is treated like a missing one.
+                logger.debug(f"Lockfile at {self.path} is empty, starting fresh.")
+                self._data = empty_lockfile()
+                return self._data
             data = json.loads(raw)
         except json.JSONDecodeError as e:
             raise ConfigError(f"Invalid JSON in {self.path}: {e}") from e

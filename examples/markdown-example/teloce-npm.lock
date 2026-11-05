@@ -1,0 +1,30 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-04T11:54:47.731277+00:00",
+  "packages": {
+    "dompurify": {
+      "version": "3.4.17",
+      "resolved": "https://registry.npmjs.org/dompurify/-/dompurify-3.4.17.tgz",
+      "integrity": "sha512-B/pSlYVHQ58kqISD/yDjuJ1yfzI34m1gF4lAod2bwSRhiN4K5Cl3H8Af7hqB2PmTL911tdEudnnXn5FnhRoz0w==",
+      "dependencies": {
+        "@types/trusted-types": "^2.0.7"
+      },
+      "wrapped": "dompurify/dompurify.js",
+      "size": 31145,
+      "workers": {},
+      "scanned_at": "2026-11-04T11:54:45.778982+00:00",
+      "scan_result": "clean"
+    },
+    "marked": {
+      "version": "18.1.3",
+      "resolved": "https://registry.npmjs.org/marked/-/marked-18.1.3.tgz",
+      "integrity": "sha512-9ChMH8EVVgjgID49nsL6IWxWk5c6GtAsq/xw7U1ggkjkU5AGuv68oLTVlFRtvcUYZtpbNyjyvGo3YDu0fGapiw==",
+      "dependencies": {},
+      "wrapped": "marked/marked.js",
+      "size": 50187,
+      "workers": {},
+      "scanned_at": "2026-11-04T11:54:47.723630+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

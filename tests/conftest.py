@@ -41,3 +41,12 @@ def sample_config() -> dict:
 def known_bytes() -> bytes:
     """A fixed byte string for hashing tests."""
     return b"hello world"
+
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def no_retry_sleep(monkeypatch):
+    """Retries must not slow the suite down."""
+    monkeypatch.setattr("teloce_npm.utils.retry.sleep", lambda seconds: None)

@@ -1,0 +1,17 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-04T11:55:14.682567+00:00",
+  "packages": {
+    "three": {
+      "version": "0.187.0",
+      "resolved": "https://registry.npmjs.org/three/-/three-0.187.0.tgz",
+      "integrity": "sha512-Qiu7R+Cmh8CstZsY1uJOSWnVlfo7ZtNLV7mF8Jltk3LB3AtDu9cRZlcnRKkAk8Y4z6KKw35z7Y7Urd7jWY8etA==",
+      "dependencies": {},
+      "wrapped": "three/three.js",
+      "size": 748847,
+      "workers": {},
+      "scanned_at": "2026-11-04T11:55:14.676957+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

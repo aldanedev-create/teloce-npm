@@ -238,3 +238,10 @@ def test_summary_when_file_missing(manager):
     summary = manager.summary()
     assert summary["exists"] is False
     assert summary["package_count"] == 0
+
+
+def test_empty_lockfile_is_treated_as_missing(tmp_path):
+    """A zero-byte lockfile (e.g. a committed placeholder) must not crash."""
+    (tmp_path / LOCKFILE_FILENAME).write_text("", encoding="utf-8")
+    manager = LockfileManager(tmp_path)
+    assert manager.load()["packages"] == {}

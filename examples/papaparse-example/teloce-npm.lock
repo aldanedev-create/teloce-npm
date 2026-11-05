@@ -1,0 +1,17 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-04T11:54:50.158428+00:00",
+  "packages": {
+    "papaparse": {
+      "version": "5.7.0",
+      "resolved": "https://registry.npmjs.org/papaparse/-/papaparse-5.7.0.tgz",
+      "integrity": "sha512-qBGxg/7Q3Kl9Wfhrz2Z74UnvnHTXLNG6jmKJFeBvP2+y4lV7So+7SR62+Zd47JvdrCkX+nDcnr0ObPzek/+6RA==",
+      "dependencies": {},
+      "wrapped": "papaparse.js",
+      "size": 19494,
+      "workers": {},
+      "scanned_at": "2026-11-04T11:54:50.153478+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

@@ -1,0 +1,79 @@
+Use chart.js from teloce-npm
+
+<script>
+// Kept outside component state so the reactivity layer never wraps the chart.
+let chart = null;
+
+const LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+
+function randomData() {
+  return LABELS.map(() => Math.round(20 + Math.random() * 80));
+}
+
+export default {
+  mounted() {
+    const mod = use('chart.js');
+    const Chart = mod.Chart || mod;
+    if (mod.registerables) {
+      Chart.register(...mod.registerables);
+    }
+    chart = new Chart(document.getElementById('chart'), {
+      type: 'bar',
+      data: {
+        labels: LABELS,
+        datasets: [{
+          label: 'Signups',
+          data: [42, 58, 35, 77, 64, 90],
+          backgroundColor: '#72d6c9',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#e7edf7' } } },
+        scales: {
+          x: { ticks: { color: '#9da9ba' }, grid: { color: '#2d3848' } },
+          y: { ticks: { color: '#9da9ba' }, grid: { color: '#2d3848' }, beginAtZero: true }
+        }
+      }
+    });
+  },
+  methods: {
+    randomize() {
+      chart.data.datasets[0].data = randomData();
+      chart.update();
+    }
+  },
+  beforeUnmount() {
+    chart?.destroy();
+    chart = null;
+  }
+};
+</script>
+
+<template>
+  <main class="shell">
+    <header>
+      <span class="eyebrow">Teloce-NPM example</span>
+      <h1>Chart.js in a .vel component</h1>
+      <p>The chart is drawn with <code>use('chart.js')</code>. No node_modules.</p>
+    </header>
+    <section class="card">
+      <button @click="randomize">Randomize data</button>
+      <div class="chart-box"><canvas id="chart" aria-label="Monthly signups bar chart"></canvas></div>
+    </section>
+  </main>
+</template>
+
+<style>
+body { margin: 0; background: #10141c; color: #e7edf7; font-family: system-ui, sans-serif; }
+.shell { min-height: 100vh; box-sizing: border-box; padding: 3rem; max-width: 1000px; margin: 0 auto; }
+.eyebrow { color: #72d6c9; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: .5rem 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+p { color: #9da9ba; }
+code { font-family: ui-monospace, monospace; }
+.card { background: #171d28; border: 1px solid #2d3848; border-radius: 8px; padding: 1.25rem; }
+.chart-box { position: relative; height: 380px; margin-top: 1rem; }
+button { background: #72d6c9; color: #10141c; border: 0; border-radius: 6px; padding: .5rem .9rem; font-weight: 600; cursor: pointer; }
+</style>

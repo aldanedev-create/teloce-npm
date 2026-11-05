@@ -28,12 +28,12 @@ def mocked_pipeline(monkeypatch):
     tarball_bytes = make_fake_tarball()
     integrity = compute_sha512(tarball_bytes)
 
-    def fake_download(tarball_url, dest_path, expected_integrity):
+    def fake_download(tarball_url, dest_path, expected_integrity, **kwargs):
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         dest_path.write_bytes(tarball_bytes)
         return dest_path
 
-    def fake_extract(tarball_path, extract_dir):
+    def fake_extract(tarball_path, extract_dir, *args, **kwargs):
         # Let the real extractor run on the real tarball
         from teloce_npm.downloader import extract_tarball
 
@@ -45,7 +45,7 @@ def mocked_pipeline(monkeypatch):
     def fake_get_metadata(self, name):
         return fake_registry_metadata(name, "4.17.21", integrity)
 
-    def fake_vulns(name, version):
+    def fake_vulns(name, version, **kwargs):
         return []
 
     monkeypatch.setattr("teloce_npm.commands.install.download_tarball", fake_download)

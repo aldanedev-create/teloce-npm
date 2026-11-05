@@ -29,6 +29,19 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "scan_malware": True,  # AST-based scanning
         "block_install_scripts": True,  # Block preinstall/postinstall
         "check_vulnerabilities": True,  # Query OSV database
+        "fail_on_critical": True,  # Block packages with a CRITICAL OSV advisory
+        "allow_vulnerabilities": [],  # Advisory IDs you have reviewed, e.g. ["GHSA-xxxx"]
+        "require_osv": False,  # Fail the install if OSV cannot be reached
+        "require_lockfile_match": True,  # Locked integrity must match the registry
+        # Hosts tarballs may be downloaded from (the configured registry is always allowed).
+        "allowed_registries": ["https://registry.npmjs.org"],
+        "block_unknown_domains": True,
+        # Download/extraction limits (decompression-bomb protection).
+        "max_tarball_mb": 100,
+        "max_unpacked_mb": 500,
+        "max_files": 50000,
+        # Reviewed exceptions: {"package": ["finding_type", ...]} (see docs/security.md).
+        "allow": {},
     },
     # Bundling configuration (MinifyJS / esbuild backend)
     # MinifyJS is installed as a core dependency and handles packages the

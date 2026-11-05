@@ -1,0 +1,68 @@
+Use dayjs from teloce-npm
+
+<script>
+const iso = (d) => d.format('YYYY-MM-DD');
+
+export default {
+  data() {
+    return { date: iso(use('dayjs')()), days: 30 };
+  },
+  computed: {
+    d() { return use('dayjs')(this.date); },
+    pretty() { return this.d.isValid() ? this.d.format('dddd, MMMM D, YYYY') : 'Invalid date'; },
+    later() { return iso(this.d.add(Number(this.days) || 0, 'day')); },
+    monthDays() { return this.d.daysInMonth(); },
+    startOfWeek() { return iso(this.d.startOf('week')); },
+    untilNewYear() { return this.d.endOf('year').diff(this.d, 'day'); },
+    leap() { return this.d.year() % 4 === 0 && (this.d.year() % 100 !== 0 || this.d.year() % 400 === 0); }
+  }
+};
+</script>
+
+<template>
+  <main class="shell">
+    <header>
+      <span class="eyebrow">Teloce-NPM example</span>
+      <h1>Day.js in a .vel component</h1>
+      <p>UMD package, loaded with <code>use('dayjs')</code>.</p>
+    </header>
+    <section class="card">
+      <div class="row">
+        <label for="date">Date</label>
+        <input id="date" type="date" :value="date" @input="date = $event.target.value">
+        <label for="days">Add days</label>
+        <input id="days" type="number" :value="days" @input="days = $event.target.value" style="width:5rem">
+      </div>
+    </section>
+    <section class="grid">
+      <div class="card"><h2>format</h2><p id="pretty">{{ pretty }}</p></div>
+      <div class="card"><h2>add</h2><p id="later">{{ later }}</p></div>
+      <div class="card"><h2>startOf('week')</h2><p>{{ startOfWeek }}</p></div>
+      <div class="card"><h2>daysInMonth</h2><p>{{ monthDays }}</p></div>
+      <div class="card"><h2>diff to end of year</h2><p>{{ untilNewYear }} days</p></div>
+      <div class="card"><h2>leap year?</h2><p>{{ leap ? 'yes' : 'no' }}</p></div>
+    </section>
+  </main>
+</template>
+
+<style>
+body { margin: 0; background: #10141c; color: #e7edf7; font-family: system-ui, sans-serif; }
+.shell { min-height: 100vh; box-sizing: border-box; padding: 3rem; max-width: 1000px; margin: 0 auto; }
+.eyebrow { color: #72d6c9; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: .5rem 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { margin: 0 0 .75rem; font-size: 1rem; color: #72d6c9; font-weight: 600; }
+p { color: #9da9ba; }
+code, .mono { font-family: ui-monospace, monospace; }
+.card { background: #171d28; border: 1px solid #2d3848; border-radius: 8px; padding: 1.25rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.row { display: flex; align-items: center; gap: .75rem; margin-top: .75rem; flex-wrap: wrap; }
+label { color: #9da9ba; font-size: .85rem; }
+textarea, input, select { background: #10141c; color: inherit; border: 1px solid #2d3848; border-radius: 6px; padding: .5rem; font: inherit; }
+textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: ui-monospace, monospace; }
+button { background: #72d6c9; color: #10141c; border: 0; border-radius: 6px; padding: .5rem .9rem; font-weight: 600; cursor: pointer; }
+ul { margin: 0; padding-left: 1.1rem; }
+li { margin: .25rem 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #2d3848; }
+th { color: #72d6c9; font-weight: 600; }
+</style>

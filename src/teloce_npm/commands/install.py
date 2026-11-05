@@ -15,6 +15,8 @@ All package writes go through either:
     - <output_dir>/<safe_name>/<safe_name>.js  (MinifyJS)
 """
 
+import json
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -23,6 +25,7 @@ from typing import Optional, cast
 from teloce_npm.bundler.asset_pipeline import copy_worker_assets, discover_worker_assets
 from teloce_npm.commands import BaseCommand, parse_package_spec
 from teloce_npm.downloader import download_tarball, extract_tarball
+from teloce_npm.downloader.extractor import ExtractionLimits
 from teloce_npm.generator import generate_all
 from teloce_npm.registry import extract_version_data, resolve_version
 from teloce_npm.scanner import scan_project
@@ -31,10 +34,47 @@ from teloce_npm.security import (
     check_vulnerabilities,
     run_security_checks,
 )
-from teloce_npm.utils.errors import PackageNotFoundError, TeloceNpmError
+from teloce_npm.security.malware_scanner import SCANNER_VERSION
+from teloce_npm.security.validation import host_of, validate_package_name
+from teloce_npm.utils.errors import (
+    PackageNotFoundError,
+    SecurityError,
+    TeloceNpmError,
+)
 from teloce_npm.utils.file_io import write_file_atomic
 from teloce_npm.utils.logging import logger
 from teloce_npm.wrapper import wrap_package
+
+
+# Rounds of "bundle, fetch what is unresolved, retry" before giving up.
+MAX_DEPENDENCY_ROUNDS = 12
+
+# Node.js built-ins can't be installed from npm (the registry has unrelated
+# placeholder packages with these names), so they are never fetched.
+NODE_BUILTINS = frozenset(
+    "assert async_hooks buffer child_process cluster console constants crypto dgram diagnostics_channel "
+    "dns domain events fs http http2 https inspector module net os path perf_hooks process punycode "
+    "querystring readline repl stream string_decoder sys timers tls trace_events tty url util v8 vm "
+    "wasi worker_threads zlib".split()
+)
+
+
+def _unresolved_packages(message: str) -> set[str]:
+    """
+    Extract npm package names from esbuild 'Could not resolve "x"' errors.
+
+    Relative paths, Node built-ins and `node:` imports are ignored.
+    `@scope/pkg/sub/path` -> `@scope/pkg`; `pkg/sub/path` -> `pkg`.
+    """
+    names: set[str] = set()
+    for specifier in re.findall(r'Could not resolve "([^"]+)"', message):
+        if specifier.startswith((".", "/", "node:")):
+            continue
+        parts = specifier.split("/")
+        package = "/".join(parts[:2]) if specifier.startswith("@") else parts[0]
+        if package and package not in NODE_BUILTINS:
+            names.add(package)
+    return names
 
 
 class InstallCommand(BaseCommand):
@@ -48,7 +88,9 @@ class InstallCommand(BaseCommand):
         production: bool = False,
         verbose: bool = False,
         no_verify: bool = False,
+        frozen: bool = False,
     ) -> int:
+        self._frozen = frozen
         self._setup(verbose=verbose)
         print("Teloce-NPM Install")
         print("=" * 40)
@@ -83,6 +125,7 @@ class InstallCommand(BaseCommand):
             except Exception as e:
                 print(f"    [ERROR] {e}")
 
+        failed_specs = [spec for spec in packages if parse_package_spec(spec)[0] not in installed]
         if not installed:
             print("\n  No packages installed.")
             return 1
@@ -107,6 +150,9 @@ class InstallCommand(BaseCommand):
 
         print(f"\n[5/5] Installed {len(installed)} package(s): {', '.join(installed)}")
         print(f"  Output: {self.adapter.output_dir}")
+        if failed_specs:
+            print(f"\n  FAILED: {', '.join(failed_specs)}; exiting with an error.")
+            return 1
         return 0
 
     # ------------------------------------------------------------------
@@ -144,6 +190,7 @@ class InstallCommand(BaseCommand):
             except Exception as e:
                 print(f"  [ERROR] {name}: {e}")
 
+        failed = sorted(set(required) - set(installed))
         if not installed:
             print("\n  No packages installed successfully.")
             return 1
@@ -165,23 +212,95 @@ class InstallCommand(BaseCommand):
         print("\n[6/6] Installation complete!")
         print(f"  {len(installed)} package(s) installed")
         print(f"  Output: {self.adapter.output_dir}")
+        if failed:
+            print(f"\n  FAILED: {', '.join(failed)} (see messages above); exiting with an error.")
+            return 1
         return 0
 
     # ------------------------------------------------------------------
     # Core: install a single package
     # ------------------------------------------------------------------
+    def _cache_usable(self, name: str, version: str, integrity: str, no_verify: bool) -> bool:
+        """A cache hit counts only if it was scanned by the current scanner (or scanning is off)."""
+        if not self.cache.has(name, version, integrity):
+            return False
+        if no_verify:
+            return True
+        metadata = self.cache.storage.load_metadata(name, version) or {}
+        if metadata.get("verified") is True and metadata.get("scanner_version") == SCANNER_VERSION:
+            return True
+        print(f"    [RESCAN] {name}@{version}: cached copy was not scanned by the current scanner")
+        return False
+
+    def _policy(self) -> SecurityPolicy:
+        return SecurityPolicy.from_config(self.config["security"])
+
+    def _allowed_hosts(self) -> list[str]:
+        """Hosts tarballs may come from: the configured registry plus security.allowed_registries."""
+        policy = self._policy()
+        if not policy.block_unknown_domains:
+            return []
+        hosts = {host_of(self.config["registry"])}
+        hosts.update(host_of(url) for url in policy.allowed_registries)
+        return sorted(h for h in hosts if h)
+
+    def _download(self, version_data: dict, dest: Path) -> Path:
+        """Download a tarball under the configured size and host limits."""
+        policy = self._policy()
+        hosts = self._allowed_hosts()
+        return download_tarball(
+            tarball_url=version_data["tarball_url"],
+            dest_path=dest,
+            expected_integrity=version_data["integrity"],
+            max_bytes=policy.max_tarball_bytes,
+            allowed_hosts=hosts or None,
+        )
+
+    def _extract(self, tarball: Path, dest: Path) -> Path:
+        """Extract a tarball under the configured limits."""
+        policy = self._policy()
+        return extract_tarball(
+            tarball,
+            dest,
+            ExtractionLimits(
+                max_files=policy.max_files,
+                max_total_bytes=policy.max_unpacked_bytes,
+                max_file_bytes=policy.max_unpacked_bytes,
+            ),
+        )
+
     def _install_package(
         self,
         name: str,
         version_range: str,
         no_verify: bool,
+        ignore_lock: bool = False,
     ) -> Optional[str]:
         """
         Install a single package. Returns the resolved version on success,
         None on failure.
+
+        `ignore_lock` is used by `update`: the locked version and integrity
+        are replaced instead of being enforced.
         """
+        self._no_verify = no_verify
+        policy = self._policy()
+
+        try:
+            validate_package_name(name)
+        except SecurityError as error:
+            print(f"    [BLOCKED] {error}")
+            return None
+
         # 1. Determine resolved version (lockfile wins for reproducibility)
-        locked_version = self.lockfile.get_package_version(name)
+        locked_version = None if ignore_lock else self.lockfile.get_package_version(name)
+
+        if getattr(self, "_frozen", False) and not locked_version:
+            print(
+                f"    [BLOCKED] {name}: not in the lockfile, and --frozen-lockfile forbids "
+                "resolving new versions. Run `teloce-npm install` locally and commit the lockfile."
+            )
+            return None
 
         try:
             metadata = self.registry.get_package_metadata(name)
@@ -203,8 +322,29 @@ class InstallCommand(BaseCommand):
 
         integrity = version_data["integrity"]
 
-        # 2. Cache hit → reuse
-        if self.cache.has(name, resolved, integrity):
+        # The lockfile is the trust anchor: a locked version must still have
+        # the integrity that was recorded, otherwise the registry now serves
+        # different bytes for the same version (republish or tampering).
+        locked_integrity = None if ignore_lock else self.lockfile.get_package_integrity(name)
+        if (
+            policy.require_lockfile_match
+            and locked_version == resolved
+            and locked_integrity
+            and locked_integrity != integrity
+        ):
+            print(
+                f"    [BLOCKED] {name}@{resolved}: the registry's integrity hash differs from the "
+                "lockfile.\n"
+                f"      locked:   {locked_integrity}\n"
+                f"      registry: {integrity}\n"
+                "      The package may have been tampered with or republished. If you trust the "
+                "change, run `teloce-npm update` (or remove the entry from the lockfile)."
+            )
+            return None
+
+        # 2. Cache hit → reuse (only if it was scanned by the current scanner,
+        # unless this run skips verification anyway)
+        if self._cache_usable(name, resolved, integrity, no_verify):
             print(f"    [CACHED] {name}@{resolved}")
             wrapped = self.cache.get_wrapped(name, resolved)
             previous_entry = self.lockfile.get_package(name) or {}
@@ -223,29 +363,47 @@ class InstallCommand(BaseCommand):
 
         # 3. Cache miss → download
         print(f"    [DOWNLOADING] {name}@{resolved}...")
-        tarball = download_tarball(
-            tarball_url=version_data["tarball_url"],
-            dest_path=self.cache.storage.tarball_path(name, resolved),
-            expected_integrity=integrity,
-        )
+        tarball = self._download(version_data, self.cache.storage.tarball_path(name, resolved))
 
         # 4. Extract into a temp dir inside the cache (cheap moves)
         with tempfile.TemporaryDirectory(dir=self.cache.storage.cache_dir) as tmpdir:
-            extracted = extract_tarball(tarball, Path(tmpdir) / "extract")
+            extracted = self._extract(tarball, Path(tmpdir) / "extract")
 
             # 5. Security checks
             if not no_verify:
-                policy = SecurityPolicy.from_config(self.config["security"])
                 result = run_security_checks(extracted, name, policy)
+                if result.get("allowed"):
+                    kinds = sorted({f["type"] for f in result["allowed"]})
+                    print(f"    [ALLOWED] {name}: {', '.join(kinds)} (security.allow)")
                 if not result["safe"]:
                     print(f"    [BLOCKED] {name}: security checks failed")
                     for f in result["findings"]:
-                        print(f"      - [{f['severity']}] {f['message']}")
+                        print(f"      - [{f['severity']}] {f['message']} ({f['type']})")
+                    kinds = sorted({f["type"] for f in result["findings"]})
+                    print(
+                        "      If you have reviewed this package, allow exactly these findings with\n"
+                        f'      "security": {{"allow": {{"{name}": {json.dumps(kinds)}}}}} in teloce-npm.json'
+                    )
                     return None
 
-                vulns = check_vulnerabilities(name, resolved)
-                for v in vulns:
-                    print(f"    [VULN] {name}: {v['id']} - {v['summary']}")
+                if policy.check_osv:
+                    vulns = check_vulnerabilities(name, resolved, strict=policy.require_osv)
+                    reviewed = set(policy.allow_vulnerabilities)
+                    blocking = []
+                    for v in vulns:
+                        if v["id"] in reviewed:
+                            print(f"    [VULN-ALLOWED] {name}: {v['id']} (security.allow_vulnerabilities)")
+                            continue
+                        print(f"    [VULN] {name}: {v['id']} [{v['severity']}] - {v['summary']}")
+                        if v["severity"] == "CRITICAL":
+                            blocking.append(v["id"])
+                    if blocking and policy.fail_on_critical:
+                        print(
+                            f"    [BLOCKED] {name}@{resolved}: critical advisory "
+                            f"({', '.join(blocking)}). Upgrade, or after review add the ID(s) to "
+                            '"security": {"allow_vulnerabilities": [...]}.'
+                        )
+                        return None
 
             # 6. Wrap or bundle (3-tuple: code, size, already_written_path)
             try:
@@ -270,7 +428,9 @@ class InstallCommand(BaseCommand):
                 metadata={
                     "integrity": integrity,
                     "tarball_url": version_data["tarball_url"],
-                    "scan_result": "clean",
+                    "scan_result": "skipped" if no_verify else "clean",
+                    "verified": not no_verify,
+                    "scanner_version": SCANNER_VERSION,
                 },
             )
 
@@ -343,11 +503,36 @@ class InstallCommand(BaseCommand):
 
         try:
             bundler = MinifyJSBundler(self.config["bundling"])
-            result = bundler.bundle_package(
-                extracted_dir=extracted,
-                package_name=name,
-                output_dir=self.adapter.output_dir,
-            )
+            # Packages like chart.js or d3 import other npm packages. Bundle
+            # first; whenever esbuild reports unresolved bare imports, fetch
+            # exactly those packages and retry (transitive deps are found the
+            # same way, one round at a time).
+            dependency_dirs: dict[str, Path] = {}
+            with tempfile.TemporaryDirectory(prefix="teloce-npm-deps-") as dep_tmp:
+                for _round in range(MAX_DEPENDENCY_ROUNDS):
+                    try:
+                        result = bundler.bundle_package(
+                            extracted_dir=extracted,
+                            package_name=name,
+                            output_dir=self.adapter.output_dir,
+                            dependency_dirs=dependency_dirs or None,
+                        )
+                        break
+                    except TeloceNpmError as error:
+                        missing = _unresolved_packages(str(error)) - dependency_dirs.keys()
+                        if not missing:
+                            raise
+                        fetched = self._fetch_bundle_dependencies(
+                            sorted(missing), [extracted, *dependency_dirs.values()],
+                            dependency_dirs, Path(dep_tmp),
+                        )
+                        if not fetched:
+                            raise
+                else:
+                    raise TeloceNpmError(
+                        f"Could not resolve all dependencies of '{name}' "
+                        f"after {MAX_DEPENDENCY_ROUNDS} rounds."
+                    )
         except MinifyJSNotAvailable as error:
             raise TeloceNpmError(
                 f"Package '{name}' requires bundling, but MinifyJS is unavailable.\n"
@@ -365,6 +550,66 @@ class InstallCommand(BaseCommand):
             f"Bundled {name} via MinifyJS: " f"{len(output_files)} file(s), {total_size} bytes"
         )
         return code, total_size, primary
+
+    def _fetch_bundle_dependencies(
+        self,
+        names: list[str],
+        package_dirs: list[Path],
+        collected: dict[str, Path],
+        work_dir: Path,
+    ) -> list[str]:
+        """
+        Download and extract the named npm packages so esbuild can resolve them.
+
+        Version ranges come from the `dependencies` of the packages already in
+        play (`package_dirs`); an unknown name resolves to its latest version.
+        Fetched packages go through the same security policy as top-level ones.
+        Returns the names that were added to `collected`.
+        """
+        ranges: dict[str, str] = {}
+        for directory in package_dirs:
+            package_json = directory / "package.json"
+            if not package_json.exists():
+                continue
+            manifest = json.loads(package_json.read_text(encoding="utf-8"))
+            for key in ("dependencies", "optionalDependencies", "peerDependencies"):
+                for dep, dep_range in (manifest.get(key) or {}).items():
+                    ranges.setdefault(dep, dep_range)
+
+        added: list[str] = []
+        for dep_name in names:
+            dep_range = ranges.get(dep_name, "latest")
+            try:
+                metadata = self.registry.get_package_metadata(dep_name)
+                resolved = resolve_version(metadata, dep_range)
+                version_data = extract_version_data(metadata, resolved)
+                validate_package_name(dep_name)
+                tarball = self._download(
+                    version_data, self.cache.storage.tarball_path(dep_name, resolved)
+                )
+                dep_dir = self._extract(
+                    tarball, work_dir / self._safe_package_name(dep_name) / resolved
+                )
+            except Exception as error:  # noqa: BLE001 - the bundler reports what is still missing
+                logger.warning(f"Could not fetch dependency {dep_name}@{dep_range}: {error}")
+                continue
+
+            if not getattr(self, "_no_verify", False):
+                policy = SecurityPolicy.from_config(self.config["security"])
+                result = run_security_checks(dep_dir, dep_name, policy)
+                if not result["safe"]:
+                    kinds = sorted({f["type"] for f in result["findings"]})
+                    raise TeloceNpmError(
+                        f"Dependency '{dep_name}' failed security checks ({', '.join(kinds)}). "
+                        f'If you have reviewed it, add "security": {{"allow": '
+                        f'{{"{dep_name}": {json.dumps(kinds)}}}}} to teloce-npm.json '
+                        f"(or re-run with --no-verify)."
+                    )
+
+            print(f"    [DEPENDENCY] {dep_name}@{resolved}")
+            collected[dep_name] = dep_dir
+            added.append(dep_name)
+        return added
 
     # ------------------------------------------------------------------
     # Lockfile update

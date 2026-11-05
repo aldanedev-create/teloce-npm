@@ -79,6 +79,14 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip security checks (DANGEROUS! Use only for trusted packages).",
     )
+    install_parser.add_argument(
+        "--frozen-lockfile",
+        action="store_true",
+        help=(
+            "CI mode: install only what the lockfile pins and fail if a package is "
+            "missing from it or its integrity changed. Never resolves new versions."
+        ),
+    )
 
     # --- add (alias for `install <pkg>`) ---
     add_parser = subparsers.add_parser(
@@ -199,6 +207,7 @@ def main() -> int:
                 production=args.production,
                 verbose=args.verbose,
                 no_verify=args.no_verify,
+                frozen=args.frozen_lockfile,
             )
 
         elif args.command == "add":

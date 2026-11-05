@@ -3,6 +3,7 @@ Generate `loader.js` — the async package loader.
 """
 
 from pathlib import Path
+import json
 from string import Template
 from typing import Optional
 
@@ -36,9 +37,11 @@ def generate_loader_js(
         manifest_url = f"{base_path.rstrip('/')}/manifest.json"
 
     template = Template(TEMPLATE_PATH.read_text(encoding="utf-8"))
+    # JSON string literals are valid JavaScript, so quotes, backslashes and
+    # line breaks in a configured path can never break out of the string.
     return template.substitute(
-        base_path=base_path.rstrip("/"),
-        manifest_url=manifest_url,
+        base_path=json.dumps(base_path.rstrip("/")),
+        manifest_url=json.dumps(manifest_url),
     )
 
 

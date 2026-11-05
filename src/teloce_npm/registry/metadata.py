@@ -4,6 +4,7 @@ Parse and extract data from raw npm registry metadata.
 
 from typing import Any
 
+from teloce_npm.security.validation import validate_version
 from teloce_npm.utils.errors import PackageNotFoundError
 
 
@@ -18,6 +19,7 @@ def extract_version_data(raw_metadata: dict[str, Any], version: str) -> dict[str
     Returns:
         A dictionary containing tarball_url, integrity, and dependencies.
     """
+    validate_version(version)
     versions = raw_metadata.get("versions", {})
     version_data = versions.get(version)
 

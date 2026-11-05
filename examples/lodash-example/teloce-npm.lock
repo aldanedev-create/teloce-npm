@@ -1,0 +1,17 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-04T11:54:37.004002+00:00",
+  "packages": {
+    "lodash": {
+      "version": "4.18.1",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.18.1.tgz",
+      "integrity": "sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==",
+      "dependencies": {},
+      "wrapped": "lodash.js",
+      "size": 546436,
+      "workers": {},
+      "scanned_at": "2026-11-04T11:54:36.997343+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

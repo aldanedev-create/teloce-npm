@@ -1,0 +1,62 @@
+Use fuse.js from teloce-npm
+
+<script>
+const LANGS = ['JavaScript', 'TypeScript', 'Python', 'Rust', 'Go', 'Kotlin', 'Swift', 'Ruby', 'Elixir',
+  'Haskell', 'Clojure', 'Scala', 'Java', 'C#', 'C++', 'PHP', 'Lua', 'Dart', 'Julia', 'OCaml'];
+
+let fuse = null;
+
+export default {
+  data() { return { q: 'jvscrpt', ready: false }; },
+  mounted() {
+    const mod = use('fuse.js');
+    const Fuse = mod.default || mod.Fuse || mod;
+    fuse = new Fuse(LANGS, { includeScore: true, threshold: 0.5 });
+    this.ready = true;
+  },
+  computed: {
+    results() {
+      if (!this.ready || !fuse) return [];
+      return this.q ? fuse.search(this.q).slice(0, 8) : [];
+    }
+  }
+};
+</script>
+
+<template>
+  <main class="shell">
+    <header>
+      <span class="eyebrow">Teloce-NPM example</span>
+      <h1>Fuzzy search with Fuse.js</h1>
+      <p>Try typos: <code>jvscrpt</code>, <code>pyton</code>, <code>rst</code>.</p>
+    </header>
+    <section class="card">
+      <input id="q" type="search" placeholder="Search languages" :value="q" @input="q = $event.target.value" style="width:100%;box-sizing:border-box">
+      <ul id="results" style="margin-top:1rem">
+        <li v-for="r in results" :key="r.item">{{ r.item }} <span class="mono" style="color:#9da9ba">score {{ r.score.toFixed(3) }}</span></li>
+      </ul>
+    </section>
+  </main>
+</template>
+
+<style>
+body { margin: 0; background: #10141c; color: #e7edf7; font-family: system-ui, sans-serif; }
+.shell { min-height: 100vh; box-sizing: border-box; padding: 3rem; max-width: 1000px; margin: 0 auto; }
+.eyebrow { color: #72d6c9; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: .5rem 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { margin: 0 0 .75rem; font-size: 1rem; color: #72d6c9; font-weight: 600; }
+p { color: #9da9ba; }
+code, .mono { font-family: ui-monospace, monospace; }
+.card { background: #171d28; border: 1px solid #2d3848; border-radius: 8px; padding: 1.25rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.row { display: flex; align-items: center; gap: .75rem; margin-top: .75rem; flex-wrap: wrap; }
+label { color: #9da9ba; font-size: .85rem; }
+textarea, input, select { background: #10141c; color: inherit; border: 1px solid #2d3848; border-radius: 6px; padding: .5rem; font: inherit; }
+textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: ui-monospace, monospace; }
+button { background: #72d6c9; color: #10141c; border: 0; border-radius: 6px; padding: .5rem .9rem; font-weight: 600; cursor: pointer; }
+ul { margin: 0; padding-left: 1.1rem; }
+li { margin: .25rem 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #2d3848; }
+th { color: #72d6c9; font-weight: 600; }
+</style>

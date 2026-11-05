@@ -61,7 +61,7 @@ def test_update_skips_already_latest(tmp_path, monkeypatch, capsys):
 
     install_calls = []
 
-    def fake_install(self, name, version_range, no_verify):
+    def fake_install(self, name, version_range, no_verify, ignore_lock=False):
         install_calls.append(name)
         return version_range.lstrip("=")
 
@@ -85,7 +85,9 @@ def test_update_bumps_version(tmp_path, monkeypatch, capsys):
 
     install_calls = []
 
-    def fake_install(self, name, version_range, no_verify):
+    def fake_install(self, name, version_range, no_verify, ignore_lock=False):
+        # `update` must replace the lock entry, not be pinned to it.
+        assert ignore_lock is True
         install_calls.append((name, version_range))
         return "2.0.0"
 

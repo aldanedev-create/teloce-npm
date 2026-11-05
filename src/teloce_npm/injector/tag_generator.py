@@ -2,6 +2,8 @@
 Generate the <script> tags for Teloce-NPM runtime files.
 """
 
+import html
+
 
 def generate_script_tags(base_path: str = "/static/teloce-npm") -> str:
     """
@@ -18,5 +20,6 @@ def generate_script_tags(base_path: str = "/static/teloce-npm") -> str:
 
     # We use 'defer' so they download in parallel and execute in order
     # after the HTML document has been parsed.
-    return f"""<script src="{base_path}/loader.js" defer></script>
-<script src="{base_path}/use.js" defer></script>"""
+    safe_base = html.escape(base_path, quote=True)
+    return f"""<script src="{safe_base}/loader.js" defer></script>
+<script src="{safe_base}/use.js" defer></script>"""

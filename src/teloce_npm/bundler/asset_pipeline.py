@@ -5,6 +5,7 @@ import mimetypes
 import re
 import shutil
 from pathlib import Path
+from typing import Optional
 
 from teloce_npm.utils.errors import TeloceNpmError
 
@@ -32,7 +33,9 @@ def copy_worker_assets(package_dir: Path, bundle_dir: Path) -> dict[str, str]:
     candidates = [
         path
         for path in package_dir.rglob("*.js")
-        if "worker" in path.name.lower() and "assets" in path.parts
+        if "worker" in path.name.lower()
+        and "assets" in path.parts
+        and "node_modules" not in path.parts
     ]
     if not candidates:
         return {}
@@ -98,7 +101,7 @@ def _rewrite_javascript(path: Path) -> None:
     path.write_text(source, encoding="utf-8")
 
 
-def _resolve_asset(source: Path, relative: str) -> Path | None:
+def _resolve_asset(source: Path, relative: str) -> Optional[Path]:
     asset = (source.parent / relative).resolve()
     if not asset.exists() or not asset.is_file():
         if not relative.startswith((".", "/")):

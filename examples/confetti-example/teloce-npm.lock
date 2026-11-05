@@ -1,0 +1,17 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-04T11:54:55.211856+00:00",
+  "packages": {
+    "canvas-confetti": {
+      "version": "1.9.4",
+      "resolved": "https://registry.npmjs.org/canvas-confetti/-/canvas-confetti-1.9.4.tgz",
+      "integrity": "sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw==",
+      "dependencies": {},
+      "wrapped": "canvas_confetti.js",
+      "size": 25777,
+      "workers": {},
+      "scanned_at": "2026-11-04T11:54:55.206859+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

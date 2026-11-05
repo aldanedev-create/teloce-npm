@@ -1,0 +1,95 @@
+Use lodash from teloce-npm
+
+<script>
+export default {
+  data() {
+    return {
+      raw: 'banana, apple, cherry, apple, date, banana, elderberry, fig, apple',
+      size: 3
+    };
+  },
+  computed: {
+    words() {
+      const _ = use('lodash');
+      return _.compact(_.map(_.split(this.raw, ','), _.trim));
+    },
+    unique() {
+      const _ = use('lodash');
+      return _.sortBy(_.uniq(this.words));
+    },
+    counts() {
+      const _ = use('lodash');
+      return _.orderBy(_.toPairs(_.countBy(this.words)), [1, 0], ['desc', 'asc']);
+    },
+    chunks() {
+      const _ = use('lodash');
+      return _.chunk(this.unique, Math.max(1, Number(this.size) || 1));
+    }
+  },
+  methods: {
+    shuffle() {
+      const _ = use('lodash');
+      this.raw = _.shuffle(this.words).join(', ');
+    }
+  }
+};
+</script>
+
+<template>
+  <main class="shell">
+    <header>
+      <span class="eyebrow">Teloce-NPM example</span>
+      <h1>Lodash in a .vel component</h1>
+      <p>Everything below is computed with <code>use('lodash')</code>. No node_modules.</p>
+    </header>
+
+    <section class="card">
+      <label for="raw">Comma-separated words</label>
+      <textarea id="raw" rows="3" :value="raw" @input="raw = $event.target.value"></textarea>
+      <div class="row">
+        <label for="size">Chunk size</label>
+        <input id="size" type="number" min="1" max="10" :value="size" @input="size = $event.target.value">
+        <button @click="shuffle">Shuffle (_.shuffle)</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>_.uniq + _.sortBy</h2>
+        <p class="mono">{{ unique.join(', ') }}</p>
+      </div>
+      <div class="card">
+        <h2>_.countBy</h2>
+        <ul>
+          <li v-for="pair in counts" :key="pair[0]"><strong>{{ pair[0] }}</strong> × {{ pair[1] }}</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2>_.chunk</h2>
+        <ul>
+          <li v-for="(group, index) in chunks" :key="index" class="mono">{{ group.join(', ') }}</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</template>
+
+<style>
+body { margin: 0; background: #10141c; color: #e7edf7; font-family: system-ui, sans-serif; }
+.shell { min-height: 100vh; box-sizing: border-box; padding: 3rem; max-width: 1000px; margin: 0 auto; }
+.eyebrow { color: #72d6c9; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: .5rem 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { margin: 0 0 .75rem; font-size: 1rem; color: #72d6c9; font-weight: 600; }
+p { color: #9da9ba; }
+code, .mono { font-family: ui-monospace, monospace; }
+.card { background: #171d28; border: 1px solid #2d3848; border-radius: 8px; padding: 1.25rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.row { display: flex; align-items: center; gap: .75rem; margin-top: .75rem; flex-wrap: wrap; }
+label { color: #9da9ba; font-size: .85rem; }
+textarea, input { background: #10141c; color: inherit; border: 1px solid #2d3848; border-radius: 6px; padding: .5rem; font: inherit; }
+textarea { width: 100%; box-sizing: border-box; margin-top: .5rem; resize: vertical; }
+input[type=number] { width: 4rem; }
+button { background: #72d6c9; color: #10141c; border: 0; border-radius: 6px; padding: .5rem .9rem; font-weight: 600; cursor: pointer; }
+ul { margin: 0; padding-left: 1.1rem; }
+li { margin: .25rem 0; }
+</style>

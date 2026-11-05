@@ -81,6 +81,43 @@ def validate_config(config: dict[str, Any]) -> None:
         if not isinstance(config["security"][key], bool):
             raise ConfigError(f"Security key 'security.{key}' must be a boolean.")
 
+    optional_security_types = {
+        "fail_on_critical": bool,
+        "require_osv": bool,
+        "require_lockfile_match": bool,
+        "block_unknown_domains": bool,
+        "max_tarball_mb": int,
+        "max_unpacked_mb": int,
+        "max_files": int,
+    }
+    for key, expected_type in optional_security_types.items():
+        value = config["security"].get(key)
+        if value is not None and (
+            not isinstance(value, expected_type)
+            or (expected_type is int and (isinstance(value, bool) or value <= 0))
+        ):
+            kind = "a positive integer" if expected_type is int else "a boolean"
+            raise ConfigError(f"Security key 'security.{key}' must be {kind}.")
+    for key in ("allowed_registries", "allow_vulnerabilities"):
+        value = config["security"].get(key)
+        if value is not None and not (
+            isinstance(value, list) and all(isinstance(item, str) for item in value)
+        ):
+            raise ConfigError(f"Security key 'security.{key}' must be a list of strings.")
+
+    # Optional reviewed exceptions: {"package": ["finding_type", ...]}
+    allow = config["security"].get("allow")
+    if allow is not None:
+        valid = isinstance(allow, dict) and all(
+            isinstance(kinds, list) and all(isinstance(kind, str) for kind in kinds)
+            for kinds in allow.values()
+        )
+        if not valid:
+            raise ConfigError(
+                "Security key 'security.allow' must map package names to lists of "
+                'finding types, e.g. {"d3": ["dynamic_function"]}.'
+            )
+
     # ------------------------------------------------------------------
     # bundling block (optional for backward-compatible direct validation;
     # load_config supplies the complete default block before validation.)

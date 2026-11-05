@@ -1,0 +1,19 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-04T11:54:40.327185+00:00",
+  "packages": {
+    "chart.js": {
+      "version": "4.6.1",
+      "resolved": "https://registry.npmjs.org/chart.js/-/chart.js-4.6.1.tgz",
+      "integrity": "sha512-hJyniucsFmq//EvXYvJ6c6mahPoI3kaxdjVH8awTaJ/fDNWeSqqqArixMJWkWNN6fcYvPU3HneSANFNYtRi61g==",
+      "dependencies": {
+        "@kurkle/color": "^0.3.0"
+      },
+      "wrapped": "chart_js/chart_js.js",
+      "size": 207347,
+      "workers": {},
+      "scanned_at": "2026-11-04T11:54:40.322581+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

@@ -3,6 +3,7 @@ Generate `use.js` — the window.use() runtime.
 """
 
 from pathlib import Path
+import json
 from string import Template
 from typing import Any
 
@@ -27,7 +28,7 @@ def generate_use_js(packages: list[dict[str, Any]]) -> str:
     if packages:
         lines = []
         for pkg in sorted(packages, key=lambda p: p["name"]):
-            lines.append(f'        "{pkg["name"]}": "{pkg["version"]}"')
+            lines.append(f"        {json.dumps(pkg['name'])}: {json.dumps(pkg['version'])}")
         available_packages = ",\n".join(lines)
     else:
         available_packages = "        // no packages installed"

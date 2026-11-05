@@ -32,7 +32,7 @@ export default {
   </main>
 </template>
 
-<style scoped>
+<style>
 body { margin: 0; background: #10141c; color: #e7edf7; font-family: system-ui, sans-serif; }
 .shell { min-height: 100vh; box-sizing: border-box; padding: 3rem; }
 header { max-width: 900px; margin: 0 auto 1.5rem; }

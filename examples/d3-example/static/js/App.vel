@@ -1,0 +1,57 @@
+Use d3 from teloce-npm
+
+<script>
+const DATA = [
+  { label: 'JS', value: 94 }, { label: 'Py', value: 88 }, { label: 'Go', value: 63 },
+  { label: 'Rs', value: 57 }, { label: 'TS', value: 81 }, { label: 'Kt', value: 49 }
+];
+
+export default {
+  mounted() {
+    const d3 = use('d3');
+    const w = 760, h = 360, m = { top: 20, right: 20, bottom: 40, left: 40 };
+    const x = d3.scaleBand().domain(DATA.map((d) => d.label)).range([m.left, w - m.right]).padding(0.25);
+    const y = d3.scaleLinear().domain([0, 100]).range([h - m.bottom, m.top]);
+    const svg = d3.select('#chart').append('svg').attr('viewBox', '0 0 ' + w + ' ' + h).attr('width', '100%');
+    svg.selectAll('rect').data(DATA).join('rect')
+      .attr('x', (d) => x(d.label)).attr('y', (d) => y(d.value))
+      .attr('width', x.bandwidth()).attr('height', (d) => y(0) - y(d.value))
+      .attr('fill', '#72d6c9').attr('rx', 4);
+    svg.append('g').attr('transform', 'translate(0,' + (h - m.bottom) + ')').call(d3.axisBottom(x)).attr('color', '#9da9ba');
+    svg.append('g').attr('transform', 'translate(' + m.left + ',0)').call(d3.axisLeft(y)).attr('color', '#9da9ba');
+  }
+};
+</script>
+
+<template>
+  <main class="shell">
+    <header>
+      <span class="eyebrow">Teloce-NPM example</span>
+      <h1>D3 in a .vel component</h1>
+      <p>Scales, axes and selections from <code>use('d3')</code>.</p>
+    </header>
+    <section class="card"><div id="chart"></div></section>
+  </main>
+</template>
+
+<style>
+body { margin: 0; background: #10141c; color: #e7edf7; font-family: system-ui, sans-serif; }
+.shell { min-height: 100vh; box-sizing: border-box; padding: 3rem; max-width: 1000px; margin: 0 auto; }
+.eyebrow { color: #72d6c9; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: .5rem 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { margin: 0 0 .75rem; font-size: 1rem; color: #72d6c9; font-weight: 600; }
+p { color: #9da9ba; }
+code, .mono { font-family: ui-monospace, monospace; }
+.card { background: #171d28; border: 1px solid #2d3848; border-radius: 8px; padding: 1.25rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.row { display: flex; align-items: center; gap: .75rem; margin-top: .75rem; flex-wrap: wrap; }
+label { color: #9da9ba; font-size: .85rem; }
+textarea, input, select { background: #10141c; color: inherit; border: 1px solid #2d3848; border-radius: 6px; padding: .5rem; font: inherit; }
+textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: ui-monospace, monospace; }
+button { background: #72d6c9; color: #10141c; border: 0; border-radius: 6px; padding: .5rem .9rem; font-weight: 600; cursor: pointer; }
+ul { margin: 0; padding-left: 1.1rem; }
+li { margin: .25rem 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #2d3848; }
+th { color: #72d6c9; font-weight: 600; }
+</style>

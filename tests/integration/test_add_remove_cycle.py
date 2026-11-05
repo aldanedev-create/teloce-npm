@@ -19,12 +19,12 @@ def mocked_pipeline(monkeypatch):
     tarball_bytes = make_fake_tarball()
     integrity = compute_sha512(tarball_bytes)
 
-    def fake_download(tarball_url, dest_path, expected_integrity):
+    def fake_download(tarball_url, dest_path, expected_integrity, **kwargs):
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         dest_path.write_bytes(tarball_bytes)
         return dest_path
 
-    def fake_extract(tarball_path, extract_dir):
+    def fake_extract(tarball_path, extract_dir, *args, **kwargs):
         from teloce_npm.downloader import extract_tarball
 
         return extract_tarball(tarball_path, extract_dir)

@@ -1,0 +1,21 @@
+{
+  "packages": [
+    "d3"
+  ],
+  "bundling": {
+    "mode": "always",
+    "minify": true,
+    "format": "esm",
+    "target": "es2020"
+  },
+  "security": {
+    "allow": {
+      "d3": [
+        "dynamic_function"
+      ],
+      "d3-dsv": [
+        "dynamic_function"
+      ]
+    }
+  }
+}

@@ -1,0 +1,63 @@
+Use papaparse from teloce-npm
+
+<script>
+const SAMPLE = `name,role,city
+Ada Lovelace,Mathematician,London
+Grace Hopper,Rear Admiral,New York
+Linus Torvalds,Engineer,Portland`;
+
+export default {
+  data() { return { csv: SAMPLE }; },
+  computed: {
+    parsed() {
+      const Papa = use('papaparse');
+      return Papa.parse(this.csv.trim(), { header: true, skipEmptyLines: true });
+    },
+    columns() { return this.parsed.meta.fields || []; },
+    rows() { return this.parsed.data; },
+    errors() { return this.parsed.errors.length; }
+  }
+};
+</script>
+
+<template>
+  <main class="shell">
+    <header>
+      <span class="eyebrow">Teloce-NPM example</span>
+      <h1>PapaParse in a .vel component</h1>
+      <p>Paste CSV, get a table. Parsed with <code>use('papaparse')</code>.</p>
+    </header>
+    <section class="card">
+      <textarea id="csv" rows="6" :value="csv" @input="csv = $event.target.value"></textarea>
+    </section>
+    <section class="card" style="margin-top:1rem">
+      <h2>{{ rows.length }} rows, {{ columns.length }} columns, {{ errors }} errors</h2>
+      <table id="table">
+        <thead><tr><th v-for="c in columns" :key="c">{{ c }}</th></tr></thead>
+        <tbody><tr v-for="(row, i) in rows" :key="i"><td v-for="c in columns" :key="c">{{ row[c] }}</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+</template>
+
+<style>
+body { margin: 0; background: #10141c; color: #e7edf7; font-family: system-ui, sans-serif; }
+.shell { min-height: 100vh; box-sizing: border-box; padding: 3rem; max-width: 1000px; margin: 0 auto; }
+.eyebrow { color: #72d6c9; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+h1 { margin: .5rem 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+h2 { margin: 0 0 .75rem; font-size: 1rem; color: #72d6c9; font-weight: 600; }
+p { color: #9da9ba; }
+code, .mono { font-family: ui-monospace, monospace; }
+.card { background: #171d28; border: 1px solid #2d3848; border-radius: 8px; padding: 1.25rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.row { display: flex; align-items: center; gap: .75rem; margin-top: .75rem; flex-wrap: wrap; }
+label { color: #9da9ba; font-size: .85rem; }
+textarea, input, select { background: #10141c; color: inherit; border: 1px solid #2d3848; border-radius: 6px; padding: .5rem; font: inherit; }
+textarea { width: 100%; box-sizing: border-box; resize: vertical; font-family: ui-monospace, monospace; }
+button { background: #72d6c9; color: #10141c; border: 0; border-radius: 6px; padding: .5rem .9rem; font-weight: 600; cursor: pointer; }
+ul { margin: 0; padding-left: 1.1rem; }
+li { margin: .25rem 0; }
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #2d3848; }
+th { color: #72d6c9; font-weight: 600; }
+</style>
