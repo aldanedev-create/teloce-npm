@@ -17,6 +17,8 @@ enforced and how to configure it (`security` block of `teloce-npm.json`).
 | Vulnerabilities | OSV lookup. A **CRITICAL** advisory blocks the install. |
 | Cache | A cached package is reused only if it was scanned by the current scanner. An install made with `--no-verify` is never trusted by a later normal install. |
 | Exit code | If any package is blocked or fails, `install` exits non-zero. |
+| Updates | `update` stays inside the range in `teloce-npm.json`, runs the same checks, and keeps the old locked version if the new one is blocked. |
+| Audit trail | `teloce-npm.lock` records `"scan_result": "clean"` or `"skipped"` (for `--no-verify`) for every package. `teloce-npm doctor` shows the active settings. |
 
 ### What the code scan looks for
 
@@ -57,7 +59,7 @@ check with `--no-verify`, allow specific finding types for that one package:
   `process_env_access`, `high_entropy`, `install_script`, `unscanned_file`, `scan_error`.
 - An entry applies only to the named package and only to the listed types.
 - Allowed findings are printed during install (`[ALLOWED] ...`).
-- A blocked install prints the exact entry to add once you have reviewed the package.
+- A blocked install prints each finding with the file it was found in (`... (dynamic_function) in lib/template.js`) and the exact entry to add once you have reviewed the package.
 - Dependencies pulled in for bundling need their own entry (for example `d3-dsv`).
 
 ## Vulnerabilities

@@ -35,7 +35,7 @@ runtime assets available under the package output directory.
 
 ## Fixes applied
 
-- Corrected SemVer 3.x validation and added npm-style `*`, `^`, and `~` range matching.
+- Corrected SemVer 3.x validation and added npm-style range matching: `*`, `^`, `~`, partial versions (`3`, `3.x`), comparators, hyphen ranges, `||` unions and dist-tags.
 - Implemented the missing `teloce-npm clean` command.
 - Preserved bundled output paths across lockfile writes and cache restores.
 - Mirrored standard npm assets into Teloce-Py's source static tree so `build.clean` does not delete the integration.
