@@ -1,5 +1,13 @@
 # Teloce-NPM
 
+<div align="center">
+  <a href="https://teloce-npm-docs.vercel.app/">
+    <img src="https://raw.githubusercontent.com/aldanedev-create/teloce-npm/main/docs/public/logo.svg" alt="teloce-npm logo" width="200">
+  </a>
+</div>
+
+
+
 ## Documentation site
 [Teloce-doc-site](https://teloce-npm-docs.vercel.app/)
 
@@ -98,4 +106,4 @@ See [CONTRIBUTING.md](https://github.com/aldanedev-create/teloce-npm/blob/main/C
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/aldanedev-create/teloce-npm/blob/main/LICENSE).
