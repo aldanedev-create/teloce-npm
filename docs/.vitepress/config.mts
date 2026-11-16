@@ -15,6 +15,10 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   srcExclude: ['README.md', 'node_modules/**'],
+  ignoreDeadLinks: [
+    // Ignore relative links pointing outside /docs to the repository's /examples directory
+    /^\.\/\.\.\/examples\//,
+  ],
 
   markdown: {
     // .vel files are single-file components: highlight them like Vue.
@@ -172,7 +176,7 @@ export default defineConfig({
       pattern: `${repo}/edit/main/docs/:path`,
       text: 'Edit this page on GitHub',
     },
-    outline: { level: [2, 3], label: 'On this page' },
+    outline: { level:, label: 'On this page' },
     docFooter: { prev: 'Previous', next: 'Next' },
     lastUpdated: { text: 'Last updated' },
     footer: {
