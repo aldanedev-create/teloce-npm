@@ -2,7 +2,6 @@
 
 Use npm packages in **plain HTML, CSS and JavaScript** or in [Teloce](https://pypi.org/project/teloce-py/) components, **without Node.js and without `node_modules`**.
 
-**Documentation:** [`docs/`](docs/) (a VitePress site, deployed from this repository)
 
 ```html
 <!-- index.html -->
