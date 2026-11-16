@@ -1,7 +1,7 @@
 # Teloce-NPM
 
 <div align="center">
-  <a href="https://teloce-npm-docs.vercel.app/">
+<a href="https://teloce-npm-docs.vercel.app/" target="_blank" rel="noopener noreferrer">Teloce NPM Docs</a>
     <img src="https://raw.githubusercontent.com/aldanedev-create/teloce-npm/main/docs/public/logo.svg" alt="teloce-npm logo" width="200">
   </a>
 </div>
