@@ -19,7 +19,7 @@ def backoff_delay(attempt: int, retry_after: Optional[str] = None) -> float:
     """Exponential backoff with jitter; honours a numeric Retry-After header."""
     if retry_after:
         try:
-            return min(float(retry_after), MAX_DELAY_SECONDS)
+            return float(min(float(retry_after), MAX_DELAY_SECONDS))
         except ValueError:
             pass
-    return min(0.5 * (2**attempt) + random.uniform(0, 0.25), MAX_DELAY_SECONDS)
+    return float(min(0.5 * (2**attempt) + random.uniform(0, 0.25), MAX_DELAY_SECONDS))

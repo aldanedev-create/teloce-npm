@@ -6,6 +6,11 @@ and error reporting contract. Distinct from tests/generator/test_use_js.py
 which verifies generator output formatting.
 """
 
+import shutil
+import subprocess
+
+import pytest
+
 from teloce_npm.generator.use_js import generate_use_js
 
 
@@ -77,3 +82,44 @@ def test_handles_empty_package_list():
     assert "window.use" in output
     # No packages -> empty lookup table
     assert "available" in output.lower() or "packages" in output.lower()
+
+
+def _run_use(tmp_path, packages, setup_js, call):
+    """Run the generated use.js in Node with a fake `window` and return the JSON result."""
+    script = tmp_path / "check.js"
+    script.write_text(
+        "var window = {};\n"
+        "var console = { error: function () {} };\n"
+        + generate_use_js(packages)
+        + "\n"
+        + setup_js
+        + "\nprocess.stdout.write(JSON.stringify("
+        + call
+        + "));\n",
+        encoding="utf-8",
+    )
+    return subprocess.run(["node", str(script)], capture_output=True, text=True, check=True).stdout
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+@pytest.mark.parametrize(
+    "package,global_name",
+    [
+        ("lodash", "lodash"),
+        ("chart.js", "chart_js"),
+        ("@scope/pkg", "_scope_pkg"),  # what the bundler loader assigns
+        ("@scope/pkg", "scope_pkg"),  # what the static wrappers assign
+        ("d3-array", "d3_array"),
+    ],
+)
+def test_use_finds_every_global_name_the_runtime_can_produce(tmp_path, package, global_name):
+    result = _run_use(
+        tmp_path, [_pkg(package)], f"window['{global_name}'] = 42;", f"window.use('{package}')"
+    )
+    assert result == "42"
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_use_returns_undefined_for_unknown_packages(tmp_path):
+    result = _run_use(tmp_path, [_pkg("lodash")], "", "window.use('nope') === undefined")
+    assert result == "true"

@@ -1,6 +1,6 @@
 {
   "lockfile_version": "1.0.0",
-  "generated_at": "2026-11-04T11:54:37.004002+00:00",
+  "generated_at": "2026-11-07T15:14:41.473320+00:00",
   "packages": {
     "lodash": {
       "version": "4.18.1",
@@ -10,7 +10,7 @@
       "wrapped": "lodash.js",
       "size": 546436,
       "workers": {},
-      "scanned_at": "2026-11-04T11:54:36.997343+00:00",
+      "scanned_at": "2026-11-07T15:14:41.468516+00:00",
       "scan_result": "clean"
     }
   }

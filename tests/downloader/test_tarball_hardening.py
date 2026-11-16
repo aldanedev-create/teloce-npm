@@ -70,7 +70,9 @@ def test_redirect_to_other_host_is_rejected(tmp_path):
 def test_redirect_within_allowed_host_is_followed(tmp_path):
     redirect = _response(status=301, headers={"Location": "/mirror/p.tgz"})
     with _get(redirect, _response()):
-        path = download_tarball(URL, tmp_path / "p.tgz", _sri(DATA), allowed_hosts=["registry.npmjs.org"])
+        path = download_tarball(
+            URL, tmp_path / "p.tgz", _sri(DATA), allowed_hosts=["registry.npmjs.org"]
+        )
     assert path.read_bytes() == DATA
 
 
@@ -123,9 +125,11 @@ def test_transient_server_error_is_retried(tmp_path):
 
 def test_connection_error_is_retried_then_reported(tmp_path):
     error = requests.exceptions.ConnectionError("reset")
-    with patch("teloce_npm.downloader.tarball.requests.get", side_effect=error) as get:
-        with pytest.raises(RegistryError, match="Failed to download"):
-            download_tarball(URL, tmp_path / "p.tgz", _sri(DATA), attempts=3)
+    with (
+        patch("teloce_npm.downloader.tarball.requests.get", side_effect=error) as get,
+        pytest.raises(RegistryError, match="Failed to download"),
+    ):
+        download_tarball(URL, tmp_path / "p.tgz", _sri(DATA), attempts=3)
     assert get.call_count == 3
 
 

@@ -1,6 +1,6 @@
 {
   "lockfile_version": "1.0.0",
-  "generated_at": "2026-11-04T11:55:04.888275+00:00",
+  "generated_at": "2026-11-16T01:47:18.533133+00:00",
   "packages": {
     "d3": {
       "version": "7.9.2",
@@ -41,7 +41,7 @@
       "wrapped": "d3/d3.js",
       "size": 282810,
       "workers": {},
-      "scanned_at": "2026-11-04T11:55:04.883472+00:00",
+      "scanned_at": "2026-11-16T01:47:18.528787+00:00",
       "scan_result": "clean"
     }
   }

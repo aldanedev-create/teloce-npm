@@ -43,9 +43,6 @@ def known_bytes() -> bytes:
     return b"hello world"
 
 
-import pytest
-
-
 @pytest.fixture(autouse=True)
 def no_retry_sleep(monkeypatch):
     """Retries must not slow the suite down."""

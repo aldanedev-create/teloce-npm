@@ -1,0 +1,23 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-16T01:47:27.970148+00:00",
+  "packages": {
+    "@supabase/supabase-js": {
+      "version": "2.119.0",
+      "resolved": "https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.119.0.tgz",
+      "integrity": "sha512-MKP49G6bJbPhvsZDegZ/IXS/ITApPgplDCF5+F65KZ5kIArS5Y90WFxwvWYALx2bsxdrSuHvkCiXHYr3dU8+sw==",
+      "dependencies": {
+        "@supabase/auth-js": "2.119.0",
+        "@supabase/storage-js": "2.119.0",
+        "@supabase/realtime-js": "2.119.0",
+        "@supabase/functions-js": "2.119.0",
+        "@supabase/postgrest-js": "2.119.0"
+      },
+      "wrapped": "supabase_supabase_js/supabase_supabase_js.js",
+      "size": 229195,
+      "workers": {},
+      "scanned_at": "2026-11-16T01:47:27.962180+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

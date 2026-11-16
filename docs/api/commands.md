@@ -64,7 +64,7 @@ exit_code = command.execute(packages=["lodash@4.17.21"], no_verify=False)
 
 `packages=None` for `InstallCommand` means "scan the project". `production` is accepted and currently ignored. `AddCommand` accepts its options either as keyword arguments or as an `options` dict (`{"verbose": ..., "no_verify": ...}`).
 
-The behaviour of each command is described in [Commands](../commands.md).
+The behaviour of each command is described in [Commands](../reference/commands.md).
 
 ### `BaseCommand`
 

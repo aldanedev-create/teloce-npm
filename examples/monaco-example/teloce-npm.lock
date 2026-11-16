@@ -1,6 +1,6 @@
 {
   "lockfile_version": "1.0.0",
-  "generated_at": "2026-11-04T11:54:33.868166+00:00",
+  "generated_at": "2026-11-07T15:15:25.469810+00:00",
   "packages": {
     "monaco-editor": {
       "version": "0.57.0",
@@ -19,7 +19,7 @@
         "html": "monaco_editor/workers/html.worker-jy9DghIH.js",
         "css": "monaco_editor/workers/css.worker-WHRSVGl1.js"
       },
-      "scanned_at": "2026-11-04T11:54:33.849206+00:00",
+      "scanned_at": "2026-11-07T15:15:25.450165+00:00",
       "scan_result": "clean"
     }
   }

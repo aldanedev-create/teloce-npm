@@ -1,6 +1,6 @@
 # Python API: injector
 
-`teloce_npm.injector` adds and removes the `<script>` block in your HTML. See [HTML injection](../html-injection.md) for the behaviour.
+`teloce_npm.injector` adds and removes the `<script>` block in your HTML. See [HTML injection](../guide/html-injection.md) for the behaviour.
 
 ```python
 from pathlib import Path
@@ -21,6 +21,18 @@ revert_injection(page)                                   # remove it
 | `generate_script_tags(base_path="/static/teloce-npm")` | The two `<script>` tags as a string, with `base_path` HTML-escaped. |
 | `inject_scripts(entry_html_path, scripts_html)` | Low-level: put the given HTML between the markers. |
 | `remove_scripts(entry_html_path)` | Low-level: remove the marked block. A missing file is ignored. |
+
+## For pages you generate yourself
+
+When your server builds the page, set `entry_html` to `null` in `teloce-npm.json` and put the tags in yourself:
+
+```python
+from teloce_npm.injector import generate_script_tags
+
+head = generate_script_tags("/teloce-npm")   # two <script ... defer> tags as a string
+```
+
+See [Flaxon](../teloce/flaxon.md) and [Server-side rendering](../teloce/ssr.md).
 
 ## Guarantees
 

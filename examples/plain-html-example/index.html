@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plain HTML, CSS and JavaScript</title>
+  <link rel="stylesheet" href="styles.css">
+  <!--
+  Use dayjs from teloce-npm
+  Use chart.js from teloce-npm
+  -->
+
+<!-- TELOCE-NPM-START -->
+<script src="/static/teloce-npm/loader.js" defer></script>
+<script src="/static/teloce-npm/use.js" defer></script>
+<!-- TELOCE-NPM-END -->
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Teloce-NPM example</p>
+    <h1>Plain HTML, CSS and JavaScript</h1>
+    <p id="today" class="lead"></p>
+    <div class="chart-box"><canvas id="chart" aria-label="Signups per month"></canvas></div>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

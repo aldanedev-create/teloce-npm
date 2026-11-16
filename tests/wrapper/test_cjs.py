@@ -5,6 +5,9 @@ Scope: only CommonJS → browser transformation.
 All tests use direct instantiation, no factory.
 """
 
+import pytest
+
+from teloce_npm.utils.errors import TeloceNpmError
 from teloce_npm.wrapper.cjs import CjsWrapper
 
 
@@ -78,16 +81,15 @@ def test_cjs_replaces_scoped_require_with_safe_name(tmp_path):
     assert "window.types_node" in output
 
 
-def test_cjs_replaces_relative_require_with_undefined(tmp_path):
+def test_cjs_relative_require_needs_bundling(tmp_path):
     pkg_dir, pj = _make_cjs_package(
         tmp_path,
         "const x = require('./utils');\nmodule.exports = x;",
     )
-    output = CjsWrapper(pkg_dir, "my-pkg", pj).wrap()
-
-    # Relative require becomes undefined (browser can't resolve)
-    assert "require('./utils')" not in output
-    assert "= undefined" in output
+    # A single wrapped script cannot provide './utils'; failing lets `auto`
+    # mode fall back to the bundler instead of shipping broken code.
+    with pytest.raises(TeloceNpmError, match="needs bundling"):
+        CjsWrapper(pkg_dir, "my-pkg", pj).wrap()
 
 
 def test_cjs_preserves_original_comment(tmp_path):

@@ -1,6 +1,6 @@
 # Example: Lodash
 
-[`examples/lodash-example`](../../examples/lodash-example) uses [Lodash](https://lodash.com/) to compute values from text you type: unique sorted words, counts and chunks.
+[`examples/lodash-example`](https://github.com/aldanedev-create/teloce-npm/tree/main/examples/lodash-example) uses [Lodash](https://lodash.com/) to compute values from text you type: unique sorted words, counts and chunks.
 
 It shows:
 
@@ -129,7 +129,7 @@ Lodash uses `Function` to compile `_.template`, so the scanner blocks it until y
 }
 ```
 
-This allows only `dynamic_function`, only for `lodash`. Anything else the scanner finds in a future Lodash release still blocks. See [Security](../security.md#allowing-reviewed-findings).
+This allows only `dynamic_function`, only for `lodash`. Anything else the scanner finds in a future Lodash release still blocks. See [Security](../guide/security.md#allowing-reviewed-findings).
 
 ## Files
 

@@ -45,18 +45,67 @@ from teloce_npm.utils.file_io import write_file_atomic
 from teloce_npm.utils.logging import logger
 from teloce_npm.wrapper import wrap_package
 
-
 # Rounds of "bundle, fetch what is unresolved, retry" before giving up.
 MAX_DEPENDENCY_ROUNDS = 12
 
 # Node.js built-ins can't be installed from npm (the registry has unrelated
 # placeholder packages with these names), so they are never fetched.
 NODE_BUILTINS = frozenset(
-    "assert async_hooks buffer child_process cluster console constants crypto dgram diagnostics_channel "
-    "dns domain events fs http http2 https inspector module net os path perf_hooks process punycode "
-    "querystring readline repl stream string_decoder sys timers tls trace_events tty url util v8 vm "
-    "wasi worker_threads zlib".split()
+    [
+        "assert",
+        "async_hooks",
+        "buffer",
+        "child_process",
+        "cluster",
+        "console",
+        "constants",
+        "crypto",
+        "dgram",
+        "diagnostics_channel",
+        "dns",
+        "domain",
+        "events",
+        "fs",
+        "http",
+        "http2",
+        "https",
+        "inspector",
+        "module",
+        "net",
+        "os",
+        "path",
+        "perf_hooks",
+        "process",
+        "punycode",
+        "querystring",
+        "readline",
+        "repl",
+        "stream",
+        "string_decoder",
+        "sys",
+        "timers",
+        "tls",
+        "trace_events",
+        "tty",
+        "url",
+        "util",
+        "v8",
+        "vm",
+        "wasi",
+        "worker_threads",
+        "zlib",
+    ]
 )
+
+
+def _relative_to(path: Optional[str], base: Path) -> str:
+    """A finding's file relative to the package folder (empty if unknown)."""
+    if not path:
+        return ""
+    try:
+        return Path(path).relative_to(base).as_posix()
+    except ValueError:
+        return Path(path).name
 
 
 def _unresolved_packages(message: str) -> set[str]:
@@ -120,8 +169,17 @@ class InstallCommand(BaseCommand):
                 resolved = self._install_package(name, version_range, no_verify)
                 if resolved:
                     installed.append(name)
-                    if spec not in raw_config["packages"]:
-                        raw_config["packages"].append(spec)
+                    # One entry per package: a new spec replaces the old one in place.
+                    entries = raw_config["packages"]
+                    positions = [
+                        i for i, e in enumerate(entries) if parse_package_spec(e)[0] == name
+                    ]
+                    if positions:
+                        entries[positions[0]] = spec
+                        for index in reversed(positions[1:]):
+                            del entries[index]
+                    else:
+                        entries.append(spec)
             except Exception as e:
                 print(f"    [ERROR] {e}")
 
@@ -378,7 +436,9 @@ class InstallCommand(BaseCommand):
                 if not result["safe"]:
                     print(f"    [BLOCKED] {name}: security checks failed")
                     for f in result["findings"]:
-                        print(f"      - [{f['severity']}] {f['message']} ({f['type']})")
+                        where = _relative_to(f.get("file"), extracted)
+                        suffix = f" in {where}" if where else ""
+                        print(f"      - [{f['severity']}] {f['message']} ({f['type']}){suffix}")
                     kinds = sorted({f["type"] for f in result["findings"]})
                     print(
                         "      If you have reviewed this package, allow exactly these findings with\n"
@@ -392,7 +452,9 @@ class InstallCommand(BaseCommand):
                     blocking = []
                     for v in vulns:
                         if v["id"] in reviewed:
-                            print(f"    [VULN-ALLOWED] {name}: {v['id']} (security.allow_vulnerabilities)")
+                            print(
+                                f"    [VULN-ALLOWED] {name}: {v['id']} (security.allow_vulnerabilities)"
+                            )
                             continue
                         print(f"    [VULN] {name}: {v['id']} [{v['severity']}] - {v['summary']}")
                         if v["severity"] == "CRITICAL":
@@ -523,8 +585,10 @@ class InstallCommand(BaseCommand):
                         if not missing:
                             raise
                         fetched = self._fetch_bundle_dependencies(
-                            sorted(missing), [extracted, *dependency_dirs.values()],
-                            dependency_dirs, Path(dep_tmp),
+                            sorted(missing),
+                            [extracted, *dependency_dirs.values()],
+                            dependency_dirs,
+                            Path(dep_tmp),
                         )
                         if not fetched:
                             raise
@@ -590,7 +654,7 @@ class InstallCommand(BaseCommand):
                 dep_dir = self._extract(
                     tarball, work_dir / self._safe_package_name(dep_name) / resolved
                 )
-            except Exception as error:  # noqa: BLE001 - the bundler reports what is still missing
+            except Exception as error:
                 logger.warning(f"Could not fetch dependency {dep_name}@{dep_range}: {error}")
                 continue
 
@@ -633,7 +697,7 @@ class InstallCommand(BaseCommand):
             size=size,
             dependencies=version_data.get("dependencies", {}),
             workers=self._worker_map(name),
-            scan_result="clean",
+            scan_result="skipped" if getattr(self, "_no_verify", False) else "clean",
         )
 
     def _default_wrapped_filename(self, name: str) -> str:

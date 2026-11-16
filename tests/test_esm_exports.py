@@ -1,8 +1,8 @@
 """ESM wrapper: export rewriting is node-local and named exports are kept."""
 
 import json
-import subprocess
 import shutil
+import subprocess
 
 import pytest
 
@@ -17,14 +17,19 @@ def _wrap(tmp_path, source):
 
 
 def test_export_keyword_inside_comment_does_not_break_real_export(tmp_path):
-    wrapped = _wrap(tmp_path, "// we export stuff here\nexport var create = 1;\nexport default function lib() {}\n")
+    wrapped = _wrap(
+        tmp_path,
+        "// we export stuff here\nexport var create = 1;\nexport default function lib() {}\n",
+    )
     assert "export var" not in wrapped
     assert "export default" not in wrapped
     assert "we export stuff here" in wrapped  # comment untouched
 
 
 def test_named_exports_are_exposed(tmp_path):
-    wrapped = _wrap(tmp_path, "const a = 1; const b = 2;\nexport { a, b as bee };\nexport function f() {}\n")
+    wrapped = _wrap(
+        tmp_path, "const a = 1; const b = 2;\nexport { a, b as bee };\nexport function f() {}\n"
+    )
     assert "__namespace['a'] = a" in wrapped
     assert "__namespace['bee'] = b" in wrapped
     assert "__namespace['f'] = f" in wrapped

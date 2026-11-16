@@ -30,15 +30,21 @@ def world(monkeypatch):
         return fake_registry_metadata(name, "4.17.21", state["integrity"])
 
     monkeypatch.setattr("teloce_npm.commands.install.download_tarball", fake_download)
-    monkeypatch.setattr("teloce_npm.commands.install.wrap_package", lambda e, n: f"window['{n}'] = {{}};")
-    monkeypatch.setattr("teloce_npm.commands.install.check_vulnerabilities", lambda n, v, **k: state["vulns"])
+    monkeypatch.setattr(
+        "teloce_npm.commands.install.wrap_package", lambda e, n: f"window['{n}'] = {{}};"
+    )
+    monkeypatch.setattr(
+        "teloce_npm.commands.install.check_vulnerabilities", lambda n, v, **k: state["vulns"]
+    )
     monkeypatch.setattr(RegistryClient, "get_package_metadata", fake_metadata)
     return state
 
 
 def _project(tmp_path, config=None):
     root = setup_project(tmp_path)
-    (root / "teloce-npm.json").write_text(json.dumps({"packages": [], **(config or {})}), encoding="utf-8")
+    (root / "teloce-npm.json").write_text(
+        json.dumps({"packages": [], **(config or {})}), encoding="utf-8"
+    )
     return root
 
 
@@ -169,7 +175,9 @@ def test_fail_on_critical_can_be_disabled(tmp_path, world):
 
 def test_vulnerability_check_can_be_disabled(tmp_path, world, monkeypatch):
     called = []
-    monkeypatch.setattr("teloce_npm.commands.install.check_vulnerabilities", lambda *a, **k: called.append(1) or [])
+    monkeypatch.setattr(
+        "teloce_npm.commands.install.check_vulnerabilities", lambda *a, **k: called.append(1) or []
+    )
     root = _project(tmp_path, {"security": {"check_vulnerabilities": False}})
     assert InstallCommand(root).execute() == 0
     assert called == []
@@ -192,3 +200,45 @@ def test_invalid_package_name_is_blocked(tmp_path, world, capsys):
     assert cmd._install_package("../../etc/passwd", "*", no_verify=False) is None
     assert "Invalid npm package name" in capsys.readouterr().out
     assert world["downloads"] == 0
+
+
+def test_lockfile_records_when_the_scan_was_skipped(tmp_path, world):
+    root = _project(tmp_path)
+    assert InstallCommand(root).execute(no_verify=True) == 0
+    assert _lock(root)["lodash"]["scan_result"] == "skipped"
+
+
+def test_lockfile_records_a_clean_scan(tmp_path, world):
+    root = _project(tmp_path)
+    assert InstallCommand(root).execute() == 0
+    assert _lock(root)["lodash"]["scan_result"] == "clean"
+
+
+def test_blocked_message_names_the_file_and_the_allow_entry(tmp_path, world, capsys, monkeypatch):
+    import io
+    import tarfile
+
+    # A package whose only file uses new Function.
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
+        for name, data in {
+            "package/package.json": b'{"name": "lodash", "version": "4.17.21", "main": "lib/x.js"}',
+            "package/lib/x.js": b"var f = new Function('a', 'return a');",
+        }.items():
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+    bad = buffer.getvalue()
+    world["integrity"] = compute_sha512(bad)
+
+    def fake_download(tarball_url, dest_path, expected_integrity, **kwargs):
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        dest_path.write_bytes(bad)
+        return dest_path
+
+    monkeypatch.setattr("teloce_npm.commands.install.download_tarball", fake_download)
+    root = _project(tmp_path)
+    assert InstallCommand(root).execute() == 1
+    out = capsys.readouterr().out
+    assert "(dynamic_function) in lib/x.js" in out
+    assert '"allow": {"lodash": ["dynamic_function"]}' in out

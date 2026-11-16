@@ -49,6 +49,7 @@
      * @typedef {Window & {
      *   MonacoEnvironment?: MonacoEnvironmentConfig,
      *   __teloceNpmWorkers?: Object<string, WorkerMap>,
+     *   __teloceNpmState?: { status: string, error?: any },
      *   [packageGlobal: string]: any
      * }} TeloceWindow
      */
@@ -108,6 +109,26 @@
     }
 
     /**
+     * Record that every package is loaded, then tell listeners. The state is
+     * kept on window so code that starts later (use.ready) still sees it.
+     * @returns {void}
+     */
+    function signalReady() {
+        w.__teloceNpmState = { status: "ready" };
+        window.dispatchEvent(new Event("teloce-npm-ready"));
+    }
+
+    /**
+     * Record that loading failed, then tell listeners.
+     * @param {any} error What went wrong.
+     * @returns {void}
+     */
+    function signalError(error) {
+        w.__teloceNpmState = { status: "error", error: error };
+        window.dispatchEvent(new CustomEvent("teloce-npm-error", { detail: error }));
+    }
+
+    /**
      * Load every package in the manifest, then signal readiness.
      * @returns {Promise<void>}
      */
@@ -116,6 +137,7 @@
 
         var manifest = await fetchManifest();
         if (!manifest) {
+            signalError(new Error("Could not load " + MANIFEST_URL));
             return;
         }
 
@@ -125,7 +147,7 @@
 
         if (packageNames.length === 0) {
             console.log("[Teloce-NPM] No packages declared. Nothing to load.");
-            window.dispatchEvent(new Event("teloce-npm-ready"));
+            signalReady();
             return;
         }
 
@@ -226,7 +248,7 @@
         }
 
         // Signal completion
-        window.dispatchEvent(new Event("teloce-npm-ready"));
+        signalReady();
         console.log(
             "[Teloce-NPM] All packages loaded (" + loaded.size + "/" + packageNames.length + ")."
         );
@@ -234,6 +256,6 @@
 
     main().catch(function(error) {
         console.error("[Teloce-NPM] Loader crashed:", error);
-        window.dispatchEvent(new CustomEvent("teloce-npm-error", { detail: error }));
+        signalError(error);
     });
 })();

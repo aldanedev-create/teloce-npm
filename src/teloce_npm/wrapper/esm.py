@@ -43,7 +43,7 @@ class EsmWrapper(BaseWrapper):
             )
 
             statement = imp["node"].text.decode("utf-8")
-            named = re.match(
+            named_import = re.match(
                 r"import\s+\{([^}]+)\}\s+from\s+['\"][^'\"]+['\"]\s*;?",
                 statement,
             )
@@ -51,8 +51,8 @@ class EsmWrapper(BaseWrapper):
                 r"import\s+([A-Za-z_$][\w$]*)\s+from\s+['\"][^'\"]+['\"]\s*;?",
                 statement,
             )
-            if named:
-                replacement = f"const {{{named.group(1)}}} = window.{safe_name};"
+            if named_import:
+                replacement = f"const {{{named_import.group(1)}}} = window.{safe_name};"
             elif default:
                 replacement = f"const {default.group(1)} = window.{safe_name};"
             else:
@@ -64,7 +64,7 @@ class EsmWrapper(BaseWrapper):
         # Each export statement is rewritten in place (by node, never by a
         # global text search) and its exported names are collected so they can
         # be exposed on the window object.
-        named: list[tuple[str, str]] = []  # (exported name, local identifier)
+        named_exports: list[tuple[str, str]] = []  # (exported name, local identifier)
         exports = extract_exports(tree)
 
         for exp in sorted(exports, key=lambda x: x["node"].start_byte, reverse=True):
@@ -82,7 +82,8 @@ class EsmWrapper(BaseWrapper):
                     )
                 # `export { a, b as c }` -> remove, remember the names.
                 default_local = None
-                for part in re.search(r"\{([^}]*)\}", node_text).group(1).split(","):
+                braces = re.search(r"\{([^}]*)\}", node_text)
+                for part in (braces.group(1) if braces else "").split(","):
                     pieces = part.strip().split()
                     if not pieces:
                         continue
@@ -91,7 +92,7 @@ class EsmWrapper(BaseWrapper):
                     if exported == "default":
                         default_local = local
                     else:
-                        named.append((exported, local))
+                        named_exports.append((exported, local))
                 replacement = f"var __default_export = {default_local};" if default_local else ""
                 source_code = replace_node(source_code, exp["node"], replacement)
             else:
@@ -101,7 +102,7 @@ class EsmWrapper(BaseWrapper):
                     node_text,
                 )
                 if declaration:
-                    named.append((declaration.group(1), declaration.group(1)))
+                    named_exports.append((declaration.group(1), declaration.group(1)))
                 replacement = re.sub(r"^export\s+", "", node_text, count=1)
                 source_code = replace_node(source_code, exp["node"], replacement)
 
@@ -114,7 +115,8 @@ class EsmWrapper(BaseWrapper):
         # one (as in `import lib, { create } from "lib"`), otherwise they form
         # the exported namespace object.
         namespace_lines = "\n".join(
-            f"    __namespace[{exported!r}] = {local};" for exported, local in reversed(named)
+            f"    __namespace[{exported!r}] = {local};"
+            for exported, local in reversed(named_exports)
         )
 
         # 5. Wrap in IIFE and attach to window

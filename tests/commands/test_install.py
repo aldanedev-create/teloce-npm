@@ -167,3 +167,26 @@ def test_lockfile_preserves_bundled_relative_output_path(tmp_path):
     assert command.lockfile.get_package("monaco-editor")["wrapped"] == (
         "monaco_editor/monaco_editor.js"
     )
+
+
+def test_installing_a_package_again_replaces_its_config_entry(tmp_path, monkeypatch):
+    root = setup_project(tmp_path)
+    monkeypatch.setattr(InstallCommand, "_install_package", fake_install)
+    (root / "teloce-npm.json").write_text(
+        json.dumps({"packages": ["lodash@^4.0.0", "dayjs"]}), encoding="utf-8"
+    )
+    InstallCommand(root).execute(packages=["lodash@4.17.21"])
+    assert json.loads((root / "teloce-npm.json").read_text())["packages"] == [
+        "lodash@4.17.21",
+        "dayjs",
+    ]
+
+
+def test_installing_without_a_version_does_not_duplicate_a_pinned_entry(tmp_path, monkeypatch):
+    root = setup_project(tmp_path)
+    monkeypatch.setattr(InstallCommand, "_install_package", fake_install)
+    (root / "teloce-npm.json").write_text(
+        json.dumps({"packages": ["dayjs@^1.11.0"]}), encoding="utf-8"
+    )
+    InstallCommand(root).execute(packages=["dayjs"])
+    assert json.loads((root / "teloce-npm.json").read_text())["packages"] == ["dayjs"]

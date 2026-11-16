@@ -99,7 +99,9 @@ def load_config(project_root: Path = Path(".")) -> dict[str, Any]:
     # ------------------------------------------------------------------
     # 5. Convert path strings to absolute Path objects
     # ------------------------------------------------------------------
-    config["entry_html"] = (project_root / config["entry_html"]).resolve()
+    # `entry_html: null` means "do not inject": the host page is generated elsewhere.
+    if config["entry_html"] is not None:
+        config["entry_html"] = (project_root / config["entry_html"]).resolve()
     config["output_dir"] = (project_root / config["output_dir"]).resolve()
     config["cache_dir"] = (project_root / config["cache_dir"]).resolve()
 

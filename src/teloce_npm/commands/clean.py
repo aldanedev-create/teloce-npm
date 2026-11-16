@@ -11,7 +11,7 @@ class CleanCommand(BaseCommand):
     def execute(self) -> int:
         self._setup()
 
-        if self.adapter.entry_html.exists():
+        if self.adapter.entry_html is not None and self.adapter.entry_html.exists():
             self.adapter.remove_scripts()
 
         if self.adapter.output_dir.exists():

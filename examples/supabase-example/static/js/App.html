@@ -1,0 +1,30 @@
+Use @supabase/supabase-js from teloce-npm
+
+<script>
+let supabase = null;
+
+export default {
+  data() { return { people: [], error: null, loading: true }; },
+  async mounted() {
+    const { createClient } = use('@supabase/supabase-js');
+    supabase = createClient('https://YOUR-PROJECT.supabase.co', 'YOUR-ANON-KEY');
+    const { data, error } = await supabase.from('people').select('id, name').order('name');
+    this.people = data || [];
+    this.error = error ? error.message : null;
+    this.loading = false;
+  }
+};
+</script>
+
+<template>
+  <main class="shell">
+    <h1>People</h1>
+    <p v-if="loading" id="status">Loading...</p>
+    <p v-else-if="error" id="status">{{ error }}</p>
+    <ul v-else id="list"><li v-for="p in people" :key="p.id">{{ p.name }}</li></ul>
+  </main>
+</template>
+
+<style>
+body { font-family: system-ui, sans-serif; margin: 3rem; }
+</style>

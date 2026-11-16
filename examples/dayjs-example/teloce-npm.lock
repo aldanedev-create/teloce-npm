@@ -1,6 +1,6 @@
 {
   "lockfile_version": "1.0.0",
-  "generated_at": "2026-11-04T11:54:43.164915+00:00",
+  "generated_at": "2026-11-16T01:46:39.334190+00:00",
   "packages": {
     "dayjs": {
       "version": "1.11.23",
@@ -10,7 +10,7 @@
       "wrapped": "dayjs.js",
       "size": 7654,
       "workers": {},
-      "scanned_at": "2026-11-04T11:54:43.160959+00:00",
+      "scanned_at": "2026-11-16T01:46:39.109110+00:00",
       "scan_result": "clean"
     }
   }

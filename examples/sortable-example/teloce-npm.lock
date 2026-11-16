@@ -1,6 +1,6 @@
 {
   "lockfile_version": "1.0.0",
-  "generated_at": "2026-11-04T11:54:57.866268+00:00",
+  "generated_at": "2026-11-16T01:47:06.065982+00:00",
   "packages": {
     "sortablejs": {
       "version": "1.15.7",
@@ -10,7 +10,7 @@
       "wrapped": "sortablejs.js",
       "size": 120276,
       "workers": {},
-      "scanned_at": "2026-11-04T11:54:57.862052+00:00",
+      "scanned_at": "2026-11-16T01:47:06.062068+00:00",
       "scan_result": "clean"
     }
   }

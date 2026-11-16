@@ -2,6 +2,7 @@
 Wrap CommonJS (CJS) packages for the browser using Tree-sitter.
 """
 
+from teloce_npm.utils.errors import TeloceNpmError
 from teloce_npm.utils.logging import logger
 
 from .ast_parser import extract_requires, parse_source, replace_node
@@ -26,17 +27,20 @@ class CjsWrapper(BaseWrapper):
         for req in sorted(requires, key=lambda x: x["node"].start_byte, reverse=True):
             dep_name = req["source"]
 
-            # Skip relative requires (the browser can't resolve them)
+            # A relative require needs the other file, which a single wrapped
+            # script cannot provide. Fail so `auto` mode falls back to the
+            # bundler (and `never` mode reports it) instead of shipping code
+            # that silently receives `undefined`.
             if dep_name.startswith(".") or dep_name.startswith("/"):
-                logger.warning(
-                    f"[{self.package_name}] Relative require '{dep_name}' is not supported."
+                raise TeloceNpmError(
+                    f"CommonJS package '{self.package_name}' requires '{dep_name}', "
+                    "a relative file; it needs bundling."
                 )
-                replacement = "undefined"
-            else:
-                safe_name = (
-                    dep_name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
-                )
-                replacement = f"window.{safe_name}"
+
+            safe_name = (
+                dep_name.replace("@", "").replace("/", "_").replace("-", "_").replace(".", "_")
+            )
+            replacement = f"window.{safe_name}"
 
             source_code = replace_node(source_code, req["node"], replacement)
 

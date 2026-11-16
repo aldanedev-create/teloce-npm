@@ -5,6 +5,9 @@ Scope: only injection / removal mechanics (no idempotency checks here —
 those live in test_idempotency.py).
 """
 
+import pytest
+
+from teloce_npm.injector import inject_scripts as _inject
 from teloce_npm.injector.injector import (
     END_MARKER,
     START_MARKER,
@@ -152,3 +155,27 @@ def test_remove_on_clean_file_is_noop(tmp_path):
 def test_remove_on_missing_file_is_noop(tmp_path):
     # Should not raise
     remove_scripts(tmp_path / "nonexistent.html")
+
+
+@pytest.mark.parametrize(
+    "html,anchor",
+    [
+        ("<html><HEAD><title>t</title></HEAD><BODY></BODY></html>", "</HEAD>"),
+        ("<html><head></head ><body></body></html>", "</head >"),
+        ("<html><body>x</BODY></html>", "</BODY>"),
+    ],
+)
+def test_injection_point_is_found_regardless_of_tag_case(tmp_path, html, anchor):
+    page = tmp_path / "index.html"
+    page.write_text(html, encoding="utf-8")
+    _inject(page, "<script src='/x.js'></script>")
+    out = page.read_text(encoding="utf-8")
+    assert out.index("TELOCE-NPM-START") < out.index(anchor)
+    assert out.count("TELOCE-NPM-START") == 1
+
+
+def test_fragment_without_head_or_body_gets_the_block_appended(tmp_path):
+    page = tmp_path / "index.html"
+    page.write_text("<p>fragment</p>", encoding="utf-8")
+    _inject(page, "<script src='/x.js'></script>")
+    assert page.read_text(encoding="utf-8").rstrip().endswith("<!-- TELOCE-NPM-END -->")

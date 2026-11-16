@@ -21,6 +21,7 @@
      * `window` plus `use()` and the package globals it resolves.
      * @typedef {Window & {
      *   use?: (name: string) => any,
+     *   __teloceNpmState?: { status: string, error?: any },
      *   [packageGlobal: string]: any
      * }} TeloceWindow
      */
@@ -40,7 +41,8 @@ ${available_packages}
      * Return a loaded npm package.
      *
      * Looks for window[name] first, then the window-safe name
-     * (e.g. "chart.js" -> "chart_js"). Logs a descriptive error and
+     * (e.g. "chart.js" -> "chart_js", "@scope/pkg" -> "_scope_pkg"), then the
+     * wrapper-style name ("@scope/pkg" -> "scope_pkg"). Logs a descriptive error and
      * returns undefined if the package is missing or not loaded yet.
      *
      * @param {string} name npm package name, e.g. "lodash" or "chart.js".
@@ -63,7 +65,14 @@ ${available_packages}
             return w[safeName];
         }
 
-        // 3. Report a helpful error
+        // 3. Try the name the static wrappers use, which drops a leading "@"
+        //    instead of replacing it ("@scope/pkg" -> "scope_pkg")
+        var wrappedName = name.replace(/@/g, "").replace(/[\/\-\.]/g, "_");
+        if (w[wrappedName] !== undefined) {
+            return w[wrappedName];
+        }
+
+        // 4. Report a helpful error
         if (Object.prototype.hasOwnProperty.call(available, name)) {
             console.error(
                 '[Teloce-NPM] Package "' + name + '" is registered but not loaded yet. ' +
@@ -77,4 +86,34 @@ ${available_packages}
         }
         return undefined;
     };
+
+    /**
+     * A promise that settles when loader.js has finished: it resolves once
+     * every package is loaded and rejects if loading failed. Use it where you
+     * cannot listen for "teloce-npm-ready" yourself, for example in a
+     * component's mounted() hook when the host page mounts immediately:
+     *
+     *     await use.ready;
+     *     const dayjs = use('dayjs');
+     *
+     * @type {Promise<void>}
+     */
+    var ready = new Promise(function(resolve, reject) {
+        /** @returns {boolean} True if the final state is already known. */
+        function settleFromState() {
+            var state = w.__teloceNpmState;
+            if (!state) return false;
+            if (state.status === "ready") resolve(undefined);
+            else reject(state.error);
+            return true;
+        }
+        if (settleFromState()) return;
+        window.addEventListener("teloce-npm-ready", function() { resolve(undefined); }, { once: true });
+        window.addEventListener("teloce-npm-error", function(event) {
+            reject(/** @type {CustomEvent} */ (event).detail);
+        }, { once: true });
+    });
+    // Nobody may await it; a rejection must not also surface as "unhandled".
+    ready.catch(function() {});
+    /** @type {{ ready?: Promise<void> }} */ (/** @type {unknown} */ (w.use)).ready = ready;
 })();

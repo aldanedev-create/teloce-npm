@@ -7,6 +7,10 @@ All notable changes are listed here. The project follows [Semantic Versioning](h
 First release.
 
 ### Added
+- `entry_html: null` for pages your server generates (Flaxon, server-side rendering): nothing is injected and `install` prints the script tags. `teloce_npm.injector.generate_script_tags()` returns them from Python.
+- `use.ready`, a promise that resolves when every package has loaded and rejects if loading failed. The loader records its state on `window.__teloceNpmState` and now fires `teloce-npm-error` when `manifest.json` cannot be loaded.
+- Documentation site (VitePress) with guides for plain HTML, Teloce, Flaxon and server-side rendering, a runtime and Python API reference, and examples.
+- A plain HTML, CSS and JavaScript example and a Supabase example.
 - Commands: `install`, `add`, `remove`, `update`, `list`, `info`, `search`, `doctor`, `clean`, and a Python API for each.
 - `Use <package> from teloce-npm` declarations in `.vel` and `.html` files, and a `use()` function in the browser.
 - Wrapping of IIFE, UMD, CommonJS and ES-module packages (Tree-sitter), and bundling through MinifyJS (esbuild), with CSS and font inlining and worker support (including Monaco).
@@ -14,7 +18,7 @@ First release.
 - Security checks: SHA-512 integrity, install-script blocking, a code scanner, OSV vulnerability lookups, and a registry host allowlist.
 - `security.allow`: reviewed, per-package exceptions to blocking findings. `security.allow_vulnerabilities` for reviewed advisory IDs.
 - Download and extraction limits: `max_tarball_mb`, `max_unpacked_mb`, `max_files`.
-- Twelve runnable examples (Monaco, Lodash, Chart.js, Day.js, marked + DOMPurify, PapaParse, Fuse.js, canvas-confetti, SortableJS, D3, Three.js, highlight.js) and full documentation.
+- Thirteen runnable examples (Monaco, Lodash, Chart.js, Day.js, marked + DOMPurify, PapaParse, Fuse.js, canvas-confetti, SortableJS, D3, Three.js, highlight.js, Supabase) and full documentation, including a guide to `.html` components.
 
 ### Security
 - The lockfile is enforced: a locked version whose integrity changed on the registry is blocked (`security.require_lockfile_match`).
@@ -28,6 +32,7 @@ First release.
 - Bundler dependencies get the same checks as top-level packages and only packages esbuild reports as missing are fetched.
 
 ### Fixed
+- Examples and docs build with `static_dir`, so Teloce-Py no longer scans `.teloce-npm/` (packages that ship TypeScript sources, such as `@supabase/supabase-js`, broke the build).
 - `install` exits non-zero when any package is blocked or fails.
 - `update` actually updates (it was pinned to the locked version), stays inside the range in `teloce-npm.json`, and reports blocked updates instead of counting them.
 - `remove` removes config entries that carry a version (`lodash@^4`); `install` replaces an entry instead of adding a duplicate.

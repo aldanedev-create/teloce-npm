@@ -1,6 +1,6 @@
 {
   "lockfile_version": "1.0.0",
-  "generated_at": "2026-11-04T11:54:40.327185+00:00",
+  "generated_at": "2026-11-07T15:14:38.435992+00:00",
   "packages": {
     "chart.js": {
       "version": "4.6.1",
@@ -12,7 +12,7 @@
       "wrapped": "chart_js/chart_js.js",
       "size": 207347,
       "workers": {},
-      "scanned_at": "2026-11-04T11:54:40.322581+00:00",
+      "scanned_at": "2026-11-07T15:14:38.432065+00:00",
       "scan_result": "clean"
     }
   }

@@ -32,7 +32,9 @@ def _file(name, content=b"x", mode=0o644):
 
 @pytest.mark.parametrize("kind", [tarfile.CHRTYPE, tarfile.BLKTYPE, tarfile.FIFOTYPE])
 def test_device_files_and_fifos_are_rejected(tmp_path, kind):
-    tarball = _tarball(tmp_path, [_file("package/package.json"), ("package/dev", None, kind, 0o666)])
+    tarball = _tarball(
+        tmp_path, [_file("package/package.json"), ("package/dev", None, kind, 0o666)]
+    )
     with pytest.raises(SecurityError, match="Unsupported file type"):
         extract_tarball(tarball, tmp_path / "out")
 
@@ -87,7 +89,9 @@ def test_decompression_bomb_is_stopped_by_declared_size(tmp_path):
 def test_setuid_and_world_writable_bits_are_dropped(tmp_path):
     members = [_file("package/a.js", mode=0o4777), _file("package/run.sh", mode=0o2755)]
     package = extract_tarball(_tarball(tmp_path, members), tmp_path / "out")
-    assert stat.S_IMODE((package / "a.js").stat().st_mode) == 0o755  # owner-exec bit kept, nothing else
+    assert (
+        stat.S_IMODE((package / "a.js").stat().st_mode) == 0o755
+    )  # owner-exec bit kept, nothing else
     for name in ("a.js", "run.sh"):
         mode = (package / name).stat().st_mode
         assert not mode & (stat.S_ISUID | stat.S_ISGID | stat.S_IWGRP | stat.S_IWOTH)

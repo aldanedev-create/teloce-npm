@@ -29,9 +29,11 @@ def test_invalid_package_name_never_reaches_the_network(name):
 
 def test_registry_must_answer_for_the_requested_package():
     client = RegistryClient("https://registry.npmjs.org")
-    with patch.object(client.session, "get", return_value=_resp(data={"name": "something-else"})):
-        with pytest.raises(SecurityError, match="something-else"):
-            client.get_package_metadata("lodash")
+    with (
+        patch.object(client.session, "get", return_value=_resp(data={"name": "something-else"})),
+        pytest.raises(SecurityError, match="something-else"),
+    ):
+        client.get_package_metadata("lodash")
 
 
 def test_name_comparison_ignores_case():
@@ -48,7 +50,11 @@ def test_http_registry_url_is_rejected_but_loopback_is_allowed():
 
 def test_transient_errors_are_retried():
     client = RegistryClient("https://registry.npmjs.org")
-    replies = [_resp(503), requests.exceptions.ConnectionError("reset"), _resp(data={"name": "lodash"})]
+    replies = [
+        _resp(503),
+        requests.exceptions.ConnectionError("reset"),
+        _resp(data={"name": "lodash"}),
+    ]
     with patch.object(client.session, "get", side_effect=replies) as get:
         assert client.get_package_metadata("lodash")["name"] == "lodash"
     assert get.call_count == 3
@@ -56,15 +62,19 @@ def test_transient_errors_are_retried():
 
 def test_persistent_failure_is_reported_after_retries():
     client = RegistryClient("https://registry.npmjs.org")
-    with patch.object(client.session, "get", return_value=_resp(503)) as get:
-        with pytest.raises(RegistryError):
-            client.get_package_metadata("lodash")
+    with (
+        patch.object(client.session, "get", return_value=_resp(503)) as get,
+        pytest.raises(RegistryError),
+    ):
+        client.get_package_metadata("lodash")
     assert get.call_count == 3
 
 
 def test_not_found_is_not_retried():
     client = RegistryClient("https://registry.npmjs.org")
-    with patch.object(client.session, "get", return_value=_resp(404)) as get:
-        with pytest.raises(Exception, match="not found"):
-            client.get_package_metadata("nope")
+    with (
+        patch.object(client.session, "get", return_value=_resp(404)) as get,
+        pytest.raises(Exception, match="not found"),
+    ):
+        client.get_package_metadata("nope")
     assert get.call_count == 1

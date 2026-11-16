@@ -72,7 +72,7 @@ def download_tarball(
             retry.sleep(retry.backoff_delay(attempt - 1, getattr(last_error, "retry_after", None)))
         try:
             return _download_once(tarball_url, dest_path, expected, max_bytes, hosts)
-        except _Retryable as error:
+        except _RetryableError as error:
             last_error = error
             logger.debug(f"Retrying download of {tarball_url} ({error})")
         except requests.exceptions.RequestException as error:
@@ -91,7 +91,7 @@ def download_tarball(
     raise RegistryError(f"Failed to download {tarball_url}: {last_error}") from last_error
 
 
-class _Retryable(Exception):
+class _RetryableError(Exception):
     """A transient HTTP failure (429/5xx)."""
 
     def __init__(self, status: int, retry_after: Optional[str] = None):
@@ -106,7 +106,9 @@ def _download_once(
     max_bytes: int,
     allowed_hosts: Optional[list[str]],
 ) -> Path:
-    fd, temp_name = tempfile.mkstemp(dir=dest_path.parent, prefix=f".{dest_path.name}.", suffix=".part")
+    fd, temp_name = tempfile.mkstemp(
+        dir=dest_path.parent, prefix=f".{dest_path.name}.", suffix=".part"
+    )
     temp_path = Path(temp_name)
     try:
         hasher = hashlib.sha512()
@@ -130,11 +132,17 @@ def _download_once(
                         )
                         continue
                     if response.status_code in retry.RETRYABLE_STATUS:
-                        raise _Retryable(response.status_code, response.headers.get("Retry-After"))
+                        raise _RetryableError(
+                            response.status_code, response.headers.get("Retry-After")
+                        )
                     response.raise_for_status()
 
                     declared = response.headers.get("Content-Length")
-                    if isinstance(declared, str) and declared.isdigit() and int(declared) > max_bytes:
+                    if (
+                        isinstance(declared, str)
+                        and declared.isdigit()
+                        and int(declared) > max_bytes
+                    ):
                         raise SecurityError(
                             f"Tarball is {int(declared)} bytes, over the {max_bytes} byte limit: {url}"
                         )
@@ -143,7 +151,9 @@ def _download_once(
                             continue
                         total += len(chunk)
                         if total > max_bytes:
-                            raise SecurityError(f"Tarball exceeds the {max_bytes} byte limit: {url}")
+                            raise SecurityError(
+                                f"Tarball exceeds the {max_bytes} byte limit: {url}"
+                            )
                         out.write(chunk)
                         hasher.update(chunk)
                     break

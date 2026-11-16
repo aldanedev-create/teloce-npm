@@ -66,3 +66,26 @@ def test_doctor_reports_missing_html(tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert "Exists:" in captured.out  # prints exists=false
+
+
+def test_doctor_shows_non_boolean_settings_as_values_not_on_off(tmp_path, capsys):
+    import json
+
+    from teloce_npm.commands.doctor import DoctorCommand
+
+    from ._helpers import setup_project
+
+    root = setup_project(tmp_path)
+    (root / "teloce-npm.json").write_text(
+        json.dumps(
+            {"packages": [], "security": {"allow": {"d3": ["dynamic_function"]}, "max_files": 1234}}
+        ),
+        encoding="utf-8",
+    )
+    assert DoctorCommand(project_root=root).execute() == 0
+    out = capsys.readouterr().out
+    assert "[ON ] scan_malware" in out
+    assert "max_files: 1234" in out
+    assert "allow: d3: dynamic_function" in out
+    assert "allow_vulnerabilities: none" in out
+    assert "[ON ] max_files" not in out and "[OFF] allow" not in out

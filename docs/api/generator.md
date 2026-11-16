@@ -46,10 +46,10 @@ The generator writes configured values into JavaScript as JSON string literals, 
 
 ## The templates
 
-The browser code is generated from `src/teloce_npm/generator/templates/loader.js.tmpl` and `use.js.tmpl`, which use `string.Template` placeholders (`${manifest_url}`, `${base_path}`, `${available_packages}`). Both are typed with JSDoc and can be checked with `tsc --allowJs --checkJs` (see [CONTRIBUTING](../../CONTRIBUTING.md)).
+The browser code is generated from `src/teloce_npm/generator/templates/loader.js.tmpl` and `use.js.tmpl`, which use `string.Template` placeholders (`${manifest_url}`, `${base_path}`, `${available_packages}`). Both are typed with JSDoc and can be checked with `tsc --allowJs --checkJs` (see [CONTRIBUTING](https://github.com/aldanedev-create/teloce-npm/blob/main/CONTRIBUTING.md)).
 
 ## Runtime behaviour
 
 `loader.js` loads the packages in the manifest in dependency order, detects dependency cycles, and logs a clear message for a package that fails to load. When a package is an ES module bundle it assigns the module's exports to a global named after the package (`chart.js` becomes `window.chart_js`). It configures Monaco's worker URLs when `monaco-editor` is present. At the end it dispatches `teloce-npm-ready`. If the loader itself throws, it dispatches `teloce-npm-error` with the error in `event.detail`.
 
-`use.js` defines `window.use(name)`. See [`use()` at runtime](../use-declarations.md#use-at-runtime).
+`use.js` defines `window.use(name)`. See [`use()` at runtime](../guide/use-declarations.md#use-at-runtime).

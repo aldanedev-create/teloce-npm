@@ -47,9 +47,29 @@ src/teloce_npm/
   injector/          adds and removes the <script> tags in HTML
   adapters/          where output files go for a given project layout
 tests/               mirrors src/; tests/integration runs whole flows offline
-examples/            twelve runnable apps
-docs/                documentation
+examples/            fourteen runnable apps
+docs/                the documentation site (VitePress): guide/, reference/, api/, teloce/, examples/
 ```
+
+## Working on the docs
+
+The docs are Markdown in `docs/`, built into a site with [VitePress](https://vitepress.dev). Node.js is needed for this, and only for this.
+
+```bash
+cd docs
+npm install
+npm run dev          # live preview at http://localhost:5173/
+npm run build        # fails on a broken link
+python ../scripts/check_docs.py    # JSON and Python code blocks, headings
+```
+
+Conventions:
+
+- One topic per page. Put it in `guide/` (how to use it), `reference/` (what exists), `api/` (Python API), `teloce/` (ecosystem) or `examples/`, and add it to the sidebar in `docs/.vitepress/config.mts`.
+- Use relative links to other pages (`../guide/security.md`), and GitHub URLs for files outside `docs/`.
+- Use containers for asides: `::: tip`, `::: warning`, `::: danger`, `::: info`. Group alternatives with `::: code-group`.
+- Show real output. Run a command and paste what it printed, and test any code you add.
+- `{{ }}` is Vue syntax. Inside code fences and inline code it is safe; in plain text, wrap it in backticks.
 
 ## Making a change
 

@@ -106,3 +106,26 @@ def test_remove_unknown_package_returns_zero(tmp_path):
     result = RemoveCommand(root).execute("unknown-pkg")
 
     assert result == 0  # idempotent
+
+
+def test_remove_drops_config_entries_that_carry_a_version(tmp_path):
+    root = _setup_installed(tmp_path, packages=("lodash",))
+    (root / "teloce-npm.json").write_text(
+        json.dumps({"packages": ["lodash@^4.17.0", "@types/node@20.0.0", "chart.js"]}),
+        encoding="utf-8",
+    )
+    assert RemoveCommand(project_root=root).execute("lodash") == 0
+    kept = json.loads((root / "teloce-npm.json").read_text())["packages"]
+    assert kept == ["@types/node@20.0.0", "chart.js"]
+
+
+def test_remove_does_not_touch_packages_with_a_similar_name(tmp_path):
+    root = _setup_installed(tmp_path, packages=("lodash",))
+    (root / "teloce-npm.json").write_text(
+        json.dumps({"packages": ["lodash", "lodash-es@4.0.0", "lodash.merge"]}), encoding="utf-8"
+    )
+    RemoveCommand(project_root=root).execute("lodash")
+    assert json.loads((root / "teloce-npm.json").read_text())["packages"] == [
+        "lodash-es@4.0.0",
+        "lodash.merge",
+    ]

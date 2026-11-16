@@ -2,7 +2,7 @@
 `teloce-npm remove <package>` — remove a package from the project.
 """
 
-from teloce_npm.commands import BaseCommand
+from teloce_npm.commands import BaseCommand, parse_package_spec
 from teloce_npm.generator import generate_all
 
 
@@ -14,9 +14,12 @@ class RemoveCommand(BaseCommand):
 
         # 1. Remove from config
         raw = self._read_raw_config()
-        if "packages" in raw and package in raw["packages"]:
-            raw["packages"].remove(package)
-            self._write_raw_config(raw)
+        if "packages" in raw:
+            # Entries may carry a version ("lodash@^4"), so match by package name.
+            kept = [spec for spec in raw["packages"] if parse_package_spec(spec)[0] != package]
+            if len(kept) != len(raw["packages"]):
+                raw["packages"] = kept
+                self._write_raw_config(raw)
 
         # 2. Remove from lockfile
         removed = self.lockfile.remove_package(package)

@@ -2,8 +2,8 @@
 Generate `loader.js` — the async package loader.
 """
 
-from pathlib import Path
 import json
+from pathlib import Path
 from string import Template
 from typing import Optional
 

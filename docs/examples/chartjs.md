@@ -1,6 +1,6 @@
 # Example: Chart.js
 
-[`examples/chart-example`](../../examples/chart-example) draws a bar chart with [Chart.js](https://www.chartjs.org/) and a button that randomises the data.
+[`examples/chart-example`](https://github.com/aldanedev-create/teloce-npm/tree/main/examples/chart-example) draws a bar chart with [Chart.js](https://www.chartjs.org/) and a button that randomises the data.
 
 It shows:
 
@@ -27,7 +27,7 @@ Open <http://127.0.0.1:8766>.
 [INSTALLED] chart.js@4.6.1
 ```
 
-The `[DEPENDENCY]` line is the bundler asking for a package that Chart.js imports. See [Wrapper formats](../wrapper-formats.md#dependencies-when-bundling).
+The `[DEPENDENCY]` line is the bundler asking for a package that Chart.js imports. See [Wrapper formats](../guide/wrapper-formats.md#dependencies-when-bundling).
 
 ## Configuration
 

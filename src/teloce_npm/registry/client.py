@@ -54,7 +54,9 @@ class RegistryClient:
             try:
                 response = self.session.get(url, timeout=15)
                 if response.status_code == 404:
-                    raise PackageNotFoundError(f"Package '{package_name}' not found in the registry.")
+                    raise PackageNotFoundError(
+                        f"Package '{package_name}' not found in the registry."
+                    )
                 if response.status_code in retry.RETRYABLE_STATUS:
                     last_error = RegistryError(f"HTTP {response.status_code}")
                     continue
@@ -79,4 +81,6 @@ class RegistryClient:
 
         if isinstance(last_error, requests.exceptions.Timeout):
             raise RegistryError(f"Timeout while fetching metadata for '{package_name}'.") from None
-        raise RegistryError(f"Network error while fetching '{package_name}': {last_error}") from last_error
+        raise RegistryError(
+            f"Network error while fetching '{package_name}': {last_error}"
+        ) from last_error

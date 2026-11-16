@@ -1,28 +1,37 @@
 # Teloce-NPM documentation
 
-**Start here**
+The documentation is a [VitePress](https://vitepress.dev) site. These Markdown files are its source, and they read fine on GitHub too.
 
-1. [Installation](installation.md): requirements and setup.
-2. [Getting started](getting-started.md): a complete walkthrough from an empty folder to a working page.
-3. [`Use` declarations](use-declarations.md): the syntax, and how `use()` behaves in the browser.
+```bash
+cd docs
+npm install
+npm run dev        # http://localhost:5173/
+npm run build      # static site in .vitepress/dist
+```
 
-**Reference**
+Node.js is needed only to build the documentation site. Teloce-NPM itself never needs it.
 
-- [Commands](commands.md): every CLI command and option.
-- [Configuration](configuration.md): every option in `teloce-npm.json`.
-- [Security](security.md): checks, limits, allowlists and CI mode.
-- [Wrapper formats](wrapper-formats.md): how packages are wrapped or bundled, workers, CSS.
-- [Lockfile](lockfile.md), [Cache](cache.md), [HTML injection](html-injection.md).
-- [Teloce-Py contract](teloce-py-contracts.md): how Teloce-NPM fits with the Teloce build.
+## Layout
 
-**Python API**
+| Folder | Contents |
+| --- | --- |
+| `guide/` | Introduction, installation, walkthroughs, `Use` declarations, security, how it works, FAQ |
+| `reference/` | Commands, configuration, the browser runtime API |
+| `api/` | The Python API |
+| `teloce/` | Teloce-Py, HTML components, Flaxon, server-side rendering |
+| `examples/` | Example walkthroughs |
+| `.vitepress/` | Site configuration (`config.mts`), theme and styles |
+| `public/` | Static assets such as the logo |
 
-- [Commands](api/commands.md), [Generator](api/generator.md), [Injector](api/injector.md), [Security](api/security.md).
+## Deploying to Vercel
 
-**Help**
+1. Push the repository to GitHub.
+2. In Vercel choose **Add New... > Project** and import the repository.
+3. Set **Root Directory** to `docs`. Leave the framework as detected (VitePress); `docs/vercel.json` already sets the install command, build command (`npm run build`) and output directory (`.vitepress/dist`).
+4. Deploy. The site is served from the root of its domain, and the base path is set automatically.
 
-- [FAQ](faq.md) and [Troubleshooting](troubleshooting.md).
+Every push to `main` redeploys, and every pull request gets a preview URL. To use a custom domain, add it under the project's Domains settings.
 
-**Examples**
+Hosting somewhere that serves the site from a sub-path (for example GitHub Pages project sites) needs `DOCS_BASE=/teloce-npm/` when building.
 
-- [Lodash](examples/lodash.md) and [Chart.js](examples/chartjs.md) are explained step by step. The [`examples/`](../examples/README.md) folder has twelve runnable apps.
+Start at the [Introduction](guide/introduction.md).

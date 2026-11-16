@@ -98,3 +98,53 @@ def test_update_bumps_version(tmp_path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "UPDATE" in captured.out
     assert install_calls == [("lodash", "=2.0.0")]
+
+
+def _registry_with(monkeypatch, versions, latest):
+    metadata = {
+        "name": "lodash",
+        "dist-tags": {"latest": latest},
+        "versions": {v: {} for v in versions},
+    }
+    monkeypatch.setattr(RegistryClient, "get_package_metadata", lambda self, name: metadata)
+
+
+def test_update_respects_the_range_in_config(tmp_path, monkeypatch, capsys):
+    root = _setup_installed(tmp_path, {"lodash": "4.0.0"})
+    (root / "teloce-npm.json").write_text(
+        json.dumps({"packages": ["lodash@^4.0.0"]}), encoding="utf-8"
+    )
+    _registry_with(monkeypatch, ["4.0.0", "4.17.21", "5.0.0"], latest="5.0.0")
+    installed = []
+
+    def fake_install(self, name, version_range, no_verify, ignore_lock=False):
+        installed.append(version_range)
+        return version_range.lstrip("=")
+
+    monkeypatch.setattr(InstallCommand, "_install_package", fake_install)
+    assert UpdateCommand(root).execute() == 0
+    assert installed == ["=4.17.21"]  # never 5.0.0
+
+
+def test_update_without_a_range_follows_latest(tmp_path, monkeypatch):
+    root = _setup_installed(tmp_path, {"lodash": "4.0.0"})
+    _registry_with(monkeypatch, ["4.0.0", "5.0.0"], latest="5.0.0")
+    installed = []
+
+    def fake_install(self, name, version_range, no_verify, ignore_lock=False):
+        installed.append(version_range)
+        return version_range.lstrip("=")
+
+    monkeypatch.setattr(InstallCommand, "_install_package", fake_install)
+    UpdateCommand(root).execute()
+    assert installed == ["=5.0.0"]
+
+
+def test_blocked_update_is_reported_and_fails_the_command(tmp_path, monkeypatch, capsys):
+    root = _setup_installed(tmp_path, {"lodash": "4.0.0"})
+    _registry_with(monkeypatch, ["4.0.0", "5.0.0"], latest="5.0.0")
+    monkeypatch.setattr(InstallCommand, "_install_package", lambda self, *a, **k: None)
+    assert UpdateCommand(root).execute() == 1
+    out = capsys.readouterr().out
+    assert "[FAILED] lodash" in out and "keeping 4.0.0" in out
+    assert "0 package(s) updated" in out

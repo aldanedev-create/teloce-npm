@@ -21,8 +21,11 @@ class DoctorCommand(BaseCommand):
         print(f"  Registry:       {self.config['registry']}")
 
         summary = self.adapter.summary()
-        print(f"\n  Entry HTML:     {summary['entry_html']['path']}")
-        print(f"    Exists:       {summary['entry_html']['exists']}")
+        if summary["entry_html"]["path"] is None:
+            print("\n  Entry HTML:     none (entry_html is null; nothing is injected)")
+        else:
+            print(f"\n  Entry HTML:     {summary['entry_html']['path']}")
+            print(f"    Exists:       {summary['entry_html']['exists']}")
         print(f"  Output dir:     {summary['output_dir']['path']}")
         print(f"    Exists:       {summary['output_dir']['exists']}")
         print(f"  Cache dir:      {summary['cache_dir']['path']}")
@@ -43,7 +46,20 @@ class DoctorCommand(BaseCommand):
         # Security policy
         print("\n  Security policy:")
         for key, val in self.config["security"].items():
-            status = "ON " if val else "OFF"
-            print(f"    [{status}] {key}")
+            if isinstance(val, bool):
+                print(f"    [{'ON ' if val else 'OFF'}] {key}")
+            else:
+                print(f"    {key}: {_describe_setting(val)}")
 
         return 0
+
+
+def _describe_setting(value: object) -> str:
+    """Short, readable form of a non-boolean security setting."""
+    if isinstance(value, dict):
+        if not value:
+            return "none"
+        return "; ".join(f"{name}: {', '.join(kinds)}" for name, kinds in value.items())
+    if isinstance(value, list):
+        return ", ".join(str(item) for item in value) if value else "none"
+    return str(value)

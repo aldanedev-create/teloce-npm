@@ -9,6 +9,7 @@ Example:
     >>> install()
 """
 
+from pathlib import Path
 from typing import Optional
 
 from .version import __author__, __email__, __license__, __url__, __version__
@@ -29,7 +30,7 @@ __all__ = [
 ]
 
 
-def install(**kwargs):
+def install(project_root: Optional[Path] = None, **kwargs):
     """
     Install all packages declared in Use declarations.
 
@@ -39,90 +40,96 @@ def install(**kwargs):
     necessary <script> tags into the configured entry_html file.
 
     Args:
+        project_root: The project directory (default: the current directory).
         **kwargs: Additional options passed to the InstallCommand.
                   See teloce_npm.commands.install.InstallCommand for details.
 
     Returns:
-        None
+        int: The exit code (0 on success, non-zero on failure).
     """
     from .commands.install import InstallCommand
 
-    return InstallCommand().execute(**kwargs)
+    return InstallCommand(project_root=project_root).execute(**kwargs)
 
 
-def add(package: str, **kwargs):
+def add(package: str, project_root: Optional[Path] = None, **kwargs):
     """
     Add a single package to the project.
 
     Args:
         package: Package name (e.g., "lodash", "lodash@4.17.21", "lodash@^4.0.0").
+        project_root: The project directory (default: the current directory).
         **kwargs: Additional options passed to the AddCommand.
 
     Returns:
-        None
+        int: The exit code (0 on success, non-zero on failure).
     """
     from .commands.add import AddCommand
 
-    return AddCommand().execute(package, **kwargs)
+    return AddCommand(project_root=project_root).execute(package, **kwargs)
 
 
-def remove(package: str, **kwargs):
+def remove(package: str, project_root: Optional[Path] = None, **kwargs):
     """
     Remove a package from the project.
 
     Args:
         package: Package name to remove.
+        project_root: The project directory (default: the current directory).
         **kwargs: Additional options passed to the RemoveCommand.
 
     Returns:
-        None
+        int: The exit code (0 on success, non-zero on failure).
     """
     from .commands.remove import RemoveCommand
 
-    return RemoveCommand().execute(package, **kwargs)
+    return RemoveCommand(project_root=project_root).execute(package, **kwargs)
 
 
-def update(package: Optional[str] = None, **kwargs):
+def update(package: Optional[str] = None, project_root: Optional[Path] = None, **kwargs):
     """
     Update packages to their latest allowed versions.
 
     Args:
         package: Optional package name to update. If None, updates all packages.
+        project_root: The project directory (default: the current directory).
         **kwargs: Additional options passed to the UpdateCommand.
 
     Returns:
-        None
+        int: The exit code (0 on success, non-zero on failure).
     """
     from .commands.update import UpdateCommand
 
-    return UpdateCommand().execute(package, **kwargs)
+    return UpdateCommand(project_root=project_root).execute(package, **kwargs)
 
 
-def clean(**kwargs):
+def clean(project_root: Optional[Path] = None, **kwargs):
     """
     Clear the cache and remove all generated files.
 
     Args:
+        project_root: The project directory (default: the current directory).
         **kwargs: Additional options passed to the CleanCommand.
 
     Returns:
-        None
+        int: The exit code (0 on success, non-zero on failure).
     """
     from .commands.clean import CleanCommand
 
-    return CleanCommand().execute(**kwargs)
+    return CleanCommand(project_root=project_root).execute(**kwargs)
 
 
-def doctor(**kwargs):
+def doctor(project_root: Optional[Path] = None, **kwargs):
     """
     Diagnose configuration and security issues.
 
     Args:
+        project_root: The project directory (default: the current directory).
         **kwargs: Additional options passed to the DoctorCommand.
 
     Returns:
-        None
+        int: The exit code (0 on success, non-zero on failure).
     """
     from .commands.doctor import DoctorCommand
 
-    return DoctorCommand().execute(**kwargs)
+    return DoctorCommand(project_root=project_root).execute(**kwargs)

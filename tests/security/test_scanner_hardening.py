@@ -2,8 +2,7 @@
 
 import pytest
 
-from teloce_npm.security import SecurityPolicy, run_security_checks
-from teloce_npm.security import malware_scanner
+from teloce_npm.security import SecurityPolicy, malware_scanner, run_security_checks
 
 
 def _scan(tmp_path, source, filename="index.js", *, raw=None, policy=None):
@@ -26,7 +25,7 @@ def _types(result):
         ("window.eval('1+1');", "eval_usage"),
         ("(0, eval)('1+1');", "eval_usage"),
         ("setTimeout('doEvil()', 10);", "eval_usage"),
-        ("setInterval(\"doEvil()\", 10);", "eval_usage"),
+        ('setInterval("doEvil()", 10);', "eval_usage"),
         ("import fs from 'fs';", "dangerous_module"),
         ("import { exec } from 'node:child_process';", "dangerous_module"),
         ("export * from 'net';", "dangerous_module"),
@@ -116,12 +115,22 @@ def _package(tmp_path, files, bin_field=None):
 
 
 def test_node_modules_in_bin_directory_are_not_flagged(tmp_path):
-    result = _package(tmp_path, {"lib/index.js": "export const a = 1;", "bin/main.js": "import fs from 'node:fs';\nimport { spawn } from 'child_process';"})
+    result = _package(
+        tmp_path,
+        {
+            "lib/index.js": "export const a = 1;",
+            "bin/main.js": "import fs from 'node:fs';\nimport { spawn } from 'child_process';",
+        },
+    )
     assert result["safe"] is True
 
 
 def test_node_modules_in_declared_bin_file_are_not_flagged(tmp_path):
-    result = _package(tmp_path, {"index.js": "module.exports = 1;", "cli/run.js": "require('child_process');"}, bin_field={"pkg": "cli/run.js"})
+    result = _package(
+        tmp_path,
+        {"index.js": "module.exports = 1;", "cli/run.js": "require('child_process');"},
+        bin_field={"pkg": "cli/run.js"},
+    )
     assert result["safe"] is True
 
 
@@ -131,19 +140,23 @@ def test_other_findings_in_bin_files_still_block(tmp_path):
 
 
 def test_node_modules_outside_bin_are_still_flagged(tmp_path):
-    result = _package(tmp_path, {"lib/index.js": "import fs from 'fs';", "bin/main.js": "import fs from 'fs';"})
+    result = _package(
+        tmp_path, {"lib/index.js": "import fs from 'fs';", "bin/main.js": "import fs from 'fs';"}
+    )
     assert result["safe"] is False
     assert all("bin" not in f["file"].split("/") for f in result["findings"])
 
 
 def test_bin_field_cannot_point_outside_the_package(tmp_path):
-    result = _package(tmp_path, {"index.js": "require('fs');"}, bin_field={"pkg": "../elsewhere.js"})
+    result = _package(
+        tmp_path, {"index.js": "require('fs');"}, bin_field={"pkg": "../elsewhere.js"}
+    )
     assert result["safe"] is False
 
 
 # ------------------------------------------------------------------- parallel
 def test_parallel_and_serial_scans_agree(tmp_path, monkeypatch):
-    files = {f"lib/f{i}.js": ("eval('x');" if i == 3 else "var a = %d;" % i) for i in range(12)}
+    files = {f"lib/f{i}.js": ("eval('x');" if i == 3 else f"var a = {i};") for i in range(12)}
     files["lib/big.js"] = "var s = '" + "x" * 5000 + "';"
     monkeypatch.setattr(malware_scanner, "PARALLEL_MIN_BYTES", 1)
     monkeypatch.setattr(malware_scanner, "PARALLEL_MIN_FILES", 2)

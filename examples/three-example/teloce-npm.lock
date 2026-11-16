@@ -1,6 +1,6 @@
 {
   "lockfile_version": "1.0.0",
-  "generated_at": "2026-11-04T11:55:14.682567+00:00",
+  "generated_at": "2026-11-07T15:14:18.943995+00:00",
   "packages": {
     "three": {
       "version": "0.187.0",
@@ -10,7 +10,7 @@
       "wrapped": "three/three.js",
       "size": 748847,
       "workers": {},
-      "scanned_at": "2026-11-04T11:55:14.676957+00:00",
+      "scanned_at": "2026-11-07T15:14:18.938005+00:00",
       "scan_result": "clean"
     }
   }

@@ -62,7 +62,9 @@ def host_of(url: str) -> str:
     return (urlparse(url).hostname or "").lower()
 
 
-def validate_url(url: object, allowed_hosts: Optional[Iterable[str]] = None, *, what: str = "URL") -> str:
+def validate_url(
+    url: object, allowed_hosts: Optional[Iterable[str]] = None, *, what: str = "URL"
+) -> str:
     """
     Check that `url` is https (http is only accepted for loopback hosts such as
     a local mirror), carries no credentials, and, if `allowed_hosts` is given,

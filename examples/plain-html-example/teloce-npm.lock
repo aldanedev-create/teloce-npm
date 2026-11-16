@@ -1,0 +1,30 @@
+{
+  "lockfile_version": "1.0.0",
+  "generated_at": "2026-11-15T15:26:18.320254+00:00",
+  "packages": {
+    "chart.js": {
+      "version": "4.6.1",
+      "resolved": "https://registry.npmjs.org/chart.js/-/chart.js-4.6.1.tgz",
+      "integrity": "sha512-hJyniucsFmq//EvXYvJ6c6mahPoI3kaxdjVH8awTaJ/fDNWeSqqqArixMJWkWNN6fcYvPU3HneSANFNYtRi61g==",
+      "dependencies": {
+        "@kurkle/color": "^0.3.0"
+      },
+      "wrapped": "chart_js/chart_js.js",
+      "size": 207347,
+      "workers": {},
+      "scanned_at": "2026-11-15T15:26:16.133351+00:00",
+      "scan_result": "clean"
+    },
+    "dayjs": {
+      "version": "1.11.23",
+      "resolved": "https://registry.npmjs.org/dayjs/-/dayjs-1.11.23.tgz",
+      "integrity": "sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==",
+      "dependencies": {},
+      "wrapped": "dayjs.js",
+      "size": 7654,
+      "workers": {},
+      "scanned_at": "2026-11-15T15:26:18.317363+00:00",
+      "scan_result": "clean"
+    }
+  }
+}

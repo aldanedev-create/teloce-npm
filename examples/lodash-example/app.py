@@ -26,7 +26,7 @@ class ExampleHandler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    build_project(ROOT, out_dir=DIST, options={"clean": True, "shared_runtime": True})
+    build_project(ROOT, out_dir=DIST, options={"clean": True, "shared_runtime": True, "static_dir": "static"})
     server = ThreadingHTTPServer(("127.0.0.1", 8765), ExampleHandler)
     print("Lodash example running at http://127.0.0.1:8765")
     server.serve_forever()

@@ -28,13 +28,15 @@ def inject_scripts(entry_html_path: Path, scripts_html: str) -> None:
     # 2. Wrap the new scripts in markers
     block = f"\n{START_MARKER}\n{scripts_html}\n{END_MARKER}\n"
 
-    # 3. Determine the best injection point
-    if "</head>" in content:
+    # 3. Determine the best injection point (tags are case-insensitive in HTML)
+    head = re.search(r"</head\s*>", content, re.IGNORECASE)
+    body = re.search(r"</body\s*>", content, re.IGNORECASE)
+    if head:
         logger.debug("Injecting before </head>")
-        content = content.replace("</head>", f"{block}</head>", 1)
-    elif "</body>" in content:
+        content = content[: head.start()] + block + content[head.start() :]
+    elif body:
         logger.debug("Injecting before </body>")
-        content = content.replace("</body>", f"{block}</body>", 1)
+        content = content[: body.start()] + block + content[body.start() :]
     else:
         logger.debug("Appending to end of file (no </head> or </body> found)")
         content += block

@@ -42,6 +42,8 @@ def validate_config(config: dict[str, Any]) -> None:
     # Paths (strings in config; loader converts to Path)
     # ------------------------------------------------------------------
     for key in ("entry_html", "output_dir", "cache_dir"):
+        if key == "entry_html" and config[key] is None:
+            continue  # null: the host generates the page, nothing is injected
         if not isinstance(config[key], str) or not config[key]:
             raise ConfigError(f"Config key '{key}' must be a non-empty string.")
 
@@ -94,7 +96,10 @@ def validate_config(config: dict[str, Any]) -> None:
         value = config["security"].get(key)
         if value is not None and (
             not isinstance(value, expected_type)
-            or (expected_type is int and (isinstance(value, bool) or value <= 0))
+            or (
+                expected_type is int
+                and (isinstance(value, bool) or (isinstance(value, int) and value <= 0))
+            )
         ):
             kind = "a positive integer" if expected_type is int else "a boolean"
             raise ConfigError(f"Security key 'security.{key}' must be {kind}.")

@@ -114,7 +114,9 @@ class MinifyJSBundler:
         with tempfile.TemporaryDirectory(prefix="teloce-npm-assets-") as temp_dir:
             prepared_dir = prepare_package(extracted_dir, Path(temp_dir))
             for dep_name, dep_dir in (dependency_dirs or {}).items():
-                shutil.copytree(dep_dir, prepared_dir / "node_modules" / dep_name, dirs_exist_ok=True)
+                shutil.copytree(
+                    dep_dir, prepared_dir / "node_modules" / dep_name, dirs_exist_ok=True
+                )
             return self._bundle_prepared_package(prepared_dir, package_name, output_dir)
 
     def _bundle_prepared_package(

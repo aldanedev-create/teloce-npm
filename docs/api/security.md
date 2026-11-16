@@ -1,6 +1,6 @@
 # Python API: security
 
-`teloce_npm.security` holds the checks that run on every package. The [Security](../security.md) page explains what they mean; this page is for calling them yourself, for example to vet a package directory in a script.
+`teloce_npm.security` holds the checks that run on every package. The [Security](../guide/security.md) page explains what they mean; this page is for calling them yourself, for example to vet a package directory in a script.
 
 ```python
 from pathlib import Path
