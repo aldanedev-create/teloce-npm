@@ -55,7 +55,7 @@ The full explanation of each setting is in [Security](security.md).
 
 ## `bundling`
 
-Bundling uses [MinifyJS](https://pypi.org/project/minifyjs/), which wraps esbuild. See [Wrapper formats](wrapper-formats.md) for when it is used.
+Bundling uses [MinifyJS](https://pypi.org/project/minifyjs/), which wraps esbuild. See See [Wrapper formats](/guide/wrapper-formats) for when it is used. for when it is used.
 
 | Key | Type | Default | Meaning |
 | --- | --- | --- | --- |

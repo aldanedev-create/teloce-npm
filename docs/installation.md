@@ -13,7 +13,7 @@ You do **not** need Node.js or npm. The bundler is a Python package that ships i
 Teloce-NPM is not on PyPI yet. Install it from GitHub:
 
 ```bash
-pip install "teloce-npm @ git+https://github.com/aldanedev-create/teloce-npm.git"
+pip install "teloce-npm 
 ```
 
 Or from a local clone, which is what you want if you plan to change the code:
@@ -61,12 +61,12 @@ Installed automatically:
 
 ## Corporate networks
 
-Teloce-NPM uses `requests`, which honours the standard `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY` environment variables, and `REQUESTS_CA_BUNDLE` for a custom certificate authority. Registry authentication is **not** supported, so private registries that need a token do not work yet. See the [FAQ](faq.md).
+Teloce-NPM uses `requests`, which honours the standard `HTTPS_PROXY`, `HTTP_PROXY` and `NO_PROXY` environment variables, and `REQUESTS_CA_BUNDLE` for a custom certificate authority. Registry authentication is **not** supported, so private registries that need a token do not work yet. See the See the [FAQ](/guide/faq)..
 
 ## Updating
 
 ```bash
-pip install --upgrade "teloce-npm @ git+https://github.com/aldanedev-create/teloce-npm.git"
+pip install --upgrade "teloce-npm 
 teloce-npm clean
 teloce-npm install
 ```

@@ -107,4 +107,4 @@ You normally never touch the globals directly. Use `use()`.
 
 ## Packages with CSS, fonts or workers
 
-Bundled packages can bring CSS, fonts and web workers with them, and you do not need extra `<link>` tags. CSS and fonts are inlined into the package's JavaScript; workers are copied next to it. See [Wrapper formats](wrapper-formats.md#assets-css-fonts-and-workers).
+Bundled packages can bring CSS, fonts and web workers with them, and you do not need extra `<link>` tags. CSS and fonts are inlined into the package's JavaScript; workers are copied next to it. See See [Wrapper formats](/guide/wrapper-formats#assets-css-fonts-and-workers)..
